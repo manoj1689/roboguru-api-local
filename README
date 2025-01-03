@@ -1,0 +1,29 @@
+On Linux:
+Use your package manager to install Python. For example, on Ubuntu:
+
+sudo apt update
+sudo apt install python3.9
+
+Ensure Python is installed. Verify it with:
+python --version
+
+Install Virtual Environment Tool
+pip install virtualenv
+
+Create a Virtual Environment
+python -m venv env
+
+Activate the Virtual Environment
+source env/bin/activate
+
+Install dependencies:
+pip install -r requirements.txt
+
+Run the Project:
+Uvicorn main:app --reload
+
+Generate Migration Files:
+alembic revision --autogenerate -m "Initial migration"
+
+Apply Migrations:
+alembic upgrade head

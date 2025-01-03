@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+sqlalchemy
+slowapi
+python-multipart
+jinja2>=3.0
+psycopg2
+psycopg2-binary

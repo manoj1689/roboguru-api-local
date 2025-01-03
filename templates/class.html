@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="message-box"></div>
+<div id="create-class" class="form-container">
+    <h2>Create Class</h2>
+    <form onsubmit="submitForm(event, '/classes/')">
+        <label for="class_name">Class Name:</label>
+        <input type="text" id="class_name" name="name" required>
+        <button type="submit">Save Class</button>
+    </form>
+
+    <h2>Classes</h2>
+    <div id="class-list">
+        <h3>All Existing Classes</h3>
+    </div>
+</div>
+{% endblock %}

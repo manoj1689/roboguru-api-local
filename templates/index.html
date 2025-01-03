@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Education Management System</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            display: flex;
+            font-family: Arial, sans-serif;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+        }
+
+        .sidebar h2 {
+            color: #ffcc00;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 15px 0;
+        }
+
+        .sidebar ul li a {
+            color: #fff;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+            background-color: #444;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .sidebar ul li a:hover {
+            background-color: #ffcc00;
+            color: #333;
+        }
+
+        .content {
+            margin-left: 270px;
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: auto;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-container h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        button {
+            background-color: #ffcc00;
+            color: #333;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #333;
+            color: #ffcc00;
+        }
+
+        #message-box {
+            display: none;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        #message-box.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        #message-box.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+    <script>
+        function showSection(sectionId) {
+            document.querySelectorAll('.form-container').forEach(container => {
+                container.classList.add('hidden');
+            });
+            document.getElementById(sectionId).classList.remove('hidden');
+        }
+
+        async function submitForm(event, endpoint) {
+            event.preventDefault(); // Prevent default form submission
+
+            // Show confirmation dialog
+            if (!confirm("Are you sure you want to save this?")) {
+                return;
+            }
+
+            const form = event.target;
+            const formData = new FormData(form);
+
+            // Send data using fetch
+            const response = await fetch(endpoint, {
+                method: "POST",
+                body: formData,
+            });
+
+            const messageBox = document.getElementById("message-box");
+            if (response.ok) {
+                const result = await response.json();
+                messageBox.textContent = result.message || "Saved successfully!";
+                messageBox.className = "success";
+                messageBox.style.display = "block";
+                form.reset(); // Reset the form fields
+            } else {
+                messageBox.textContent = "Failed to save. Please try again.";
+                messageBox.className = "error";
+                messageBox.style.display = "block";
+            }
+        }
+
+        async function loadClasses() {
+            let classSelects = document.querySelectorAll(".class-select");
+            classSelects.forEach(select => {
+                select.innerHTML = "<option value=''>Select Class</option>";
+            });
+            let response = await fetch(`/classes/`);
+            if (response.ok) {
+                let data = await response.json();
+                data.forEach(cls => {
+                    classSelects.forEach(select => {
+                        let option = document.createElement("option");
+                        option.value = cls.id;
+                        option.text = cls.name;
+                        select.appendChild(option);
+                    });
+                });
+            } else {
+                alert("Failed to load classes.");
+            }
+        }
+
+        async function loadSubjects(classId, subjectSelectId) {
+            let subjectSelect = document.getElementById(subjectSelectId);
+            subjectSelect.innerHTML = "<option value=''>Select Subject</option>";
+            if (classId) {
+                let response = await fetch(`/subjects/class/${classId}`);
+                if (response.ok) {
+                    let data = await response.json();
+                    data.forEach(subject => {
+                        let option = document.createElement("option");
+                        option.value = subject.id;
+                        option.text = subject.name;
+                        subjectSelect.appendChild(option);
+                    });
+                } else {
+                    alert("Failed to load subjects.");
+                }
+            }
+        }
+
+        async function loadChapters(subjectId, chapterSelectId) {
+            let chapterSelect = document.getElementById(chapterSelectId);
+            chapterSelect.innerHTML = "<option value=''>Select Chapter</option>";
+            if (subjectId) {
+                let response = await fetch(`/chapters/subject/${subjectId}`);
+                if (response.ok) {
+                    let data = await response.json();
+                    data.forEach(chapter => {
+                        let option = document.createElement("option");
+                        option.value = chapter.id;
+                        option.text = chapter.name;
+                        chapterSelect.appendChild(option);
+                    });
+                } else {
+                    alert("Failed to load chapters.");
+                }
+            }
+        }
+
+        window.onload = () => {
+            showSection('create-class'); 
+            loadClasses();
+        };
+    </script>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Menu</h2>
+        <ul>
+            <li><a href="#" onclick="showSection('create-class')">Create Class</a></li>
+            <li><a href="#" onclick="showSection('create-subject')">Create Subject</a></li>
+            <li><a href="#" onclick="showSection('create-chapter')">Create Chapter</a></li>
+            <li><a href="#" onclick="showSection('create-topic')">Create Topic</a></li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <div id="message-box"></div>
+
+        <div id="create-class" class="form-container">
+            <h2>Create Class</h2>
+            <form onsubmit="submitForm(event, '/classes/')">
+                <label for="class_name">Class Name:</label>
+                <input type="text" id="class_name" name="name" required>
+                <button type="submit">Save Class</button>
+            </form>
+        </div>
+
+        <div id="create-subject" class="form-container hidden">
+            <h2>Create Subject</h2>
+            <form onsubmit="submitForm(event, '/subjects/')">
+                <label for="class_id_subject">Class:</label>
+                <select id="class_id_subject" class="class-select" name="class_id" onchange="loadSubjects(this.value, 'subject_id_subject')" required>
+                    <option value="">Select Class</option>
+                </select>
+                <label for="subject_name">Subject Name:</label>
+                <input type="text" id="subject_name" name="name" required>
+                <button type="submit">Save Subject</button>
+            </form>
+        </div>
+
+        <div id="create-chapter" class="form-container hidden">
+            <h2>Create Chapter</h2>
+            <form onsubmit="submitForm(event, '/chapters/')">
+                <label for="class_id_chapter">Class:</label>
+                <select id="class_id_chapter" class="class-select" name="class_id" onchange="loadSubjects(this.value, 'subject_id_chapter')" required>
+                    <option value="">Select Class</option>
+                </select>
+                <label for="subject_id_chapter">Subject:</label>
+                <select id="subject_id_chapter" name="subject_id" onchange="loadChapters(this.value, 'chapter_id_chapter')" required>
+                    <option value="">Select Subject</option>
+                </select>
+                <label for="chapter_name">Chapter Name:</label>
+                <input type="text" id="chapter_name" name="name" required>
+                <button type="submit">Save Chapter</button>
+            </form>
+        </div>
+
+        <div id="create-topic" class="form-container hidden">
+            <h2>Create Topic</h2>
+            <form onsubmit="submitForm(event, '/topics/')">
+                <label for="class_id_topic">Class:</label>
+                <select id="class_id_topic" class="class-select" name="class_id" onchange="loadSubjects(this.value, 'subject_id_topic')" required>
+                    <option value="">Select Class</option>
+                </select>
+                <label for="subject_id_topic">Subject:</label>
+                <select id="subject_id_topic" name="subject_id" onchange="loadChapters(this.value, 'chapter_id_topic')" required>
+                    <option value="">Select Subject</option>
+                </select>
+                <label for="chapter_id_topic">Chapter:</label>
+                <select id="chapter_id_topic" name="chapter_id" required>
+                    <option value="">Select Chapter</option>
+                </select>
+                <label for="topic_name">Topic Name:</label>
+                <input type="text" id="topic_name" name="name" required>
+                <label for="details">Details:</label>
+                <input type="text" id="topic_details" name="details" required>
+                <button type="submit">Save Topic</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

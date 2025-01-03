@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="message-box"></div>
+<div id="create-subject" class="form-container">
+    <h2>Create Subject</h2>
+    <form onsubmit="submitForm(event, '/subjects/')">
+        <label for="class_id_subject">Class:</label>
+        <select id="class_id_subject" class="class-select" name="class_id" onchange="loadSubjects()" required>
+            <option value="">Select Class</option>
+        </select>
+
+        <label for="subject_name">Subject Name:</label>
+        <input type="text" id="subject_name" name="name" required>
+        <button type="submit">Save Subject</button>
+    </form>
+
+    <h3>Existing Subjects for Selected Class</h3>
+    <div id="subject-list">Please select a class to view subjects.</div>
+</div>
+{% endblock %}
