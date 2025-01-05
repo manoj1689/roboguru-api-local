@@ -1,93 +1,131 @@
-
 import json
 import requests
-import logging
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Load the seed JSON file
-with open("seed.json", "r") as seed_file:
+with open('seed.json', 'r') as seed_file:
     seed_data = json.load(seed_file)
 
 # API base URL and headers
 BASE_URL = "http://127.0.0.1:8000"
+
 HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NzA4MTg4NjA0Iiwicm9sZSI6Im5vcm1hbCIsImV4cCI6MTczNjA3MjI0MX0.VFi2xMDrKU58r95UxYYaDo2JpCDiy9IZxquik3ovGFU",  # Replace with a secure token source
+    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NzA4MTg4NjA0Iiwicm9sZSI6Im5vcm1hbCIsImV4cCI6MTczNjA5ODI2M30.mpHPciTEWu8GQDIi_YzYeP7ljGliHA5u4CAPdPigwIk"
 }
 
 # Endpoints
 ENDPOINTS = {
     "create_level": "/level/create/",
     "create_class": "/classes/create/",
-    "create_subject": "/subjects/create/",
-    "create_chapter": "/chapters/create/",
-    "create_topic": "/topics/create/",
+    "create_subject": "/subjects/create",
+    "create_chapter": "/chapters/create",
+    "create_topic": "/topics/create",
 }
 
-# Function to send data to the API
 def post_data(endpoint, payload):
     try:
         response = requests.post(BASE_URL + endpoint, json=payload, headers=HEADERS)
-        logging.info(f"Request to {BASE_URL + endpoint} with payload: {payload}")
-        logging.info(f"Status Code: {response.status_code}")
+        print(f"Request to {BASE_URL + endpoint} with payload: {payload}")
+        print(f"Status Code: {response.status_code}")
+        
+        # Check for unauthorized status
+        if response.status_code == 401:
+            print("Error: Unauthorized. Check your token or permissions.")
+            return {"error": "Unauthorized. Check your token or permissions."}
+        
+        # Raise an exception for HTTP errors (4xx, 5xx)
         response.raise_for_status()
-        return response.json()
+
+        # Parse the response data
+        response_data = response.json()
+        
+        # Print the success response and ID
+        print(f"Success: {response_data}")
+        
+        # Access the ID from the response data
+        if 'data' in response_data and 'id' in response_data['data']:
+            # print("Response ID:", response_data['data']['id'])
+            return response_data['data']['id']  # Return only the ID for further use
+        else:
+            print("ID not found in response data")
+            return None
+    
     except requests.exceptions.RequestException as e:
-        logging.error(f"Error while posting to {endpoint}: {e}")
-        return None
+        # Catch all request exceptions and return error data
+        print(f"Error: {e}")
+        return {"error": str(e)}
+    except ValueError as ve:
+        # Handle JSON decoding errors
+        print(f"JSON Decoding Error: {ve}")
+        return {"error": "Failed to decode JSON response"}
 
 # Insert the seed data into the database
 for level in seed_data.get("levels", []):
     level_payload = {"name": level["name"]}
     level_response = post_data(ENDPOINTS["create_level"], level_payload)
-    level_id = level_response.get("id") if level_response else None
-    if not level_id:
-        logging.error("Failed to create level: %s", level["name"])
-        continue
-
+    print("Level response:", level_response)
+    
+  
+    
+   
+    # Iterate over classes within the level
     for cls in level.get("classes", []):
-        class_payload = {"name": cls["name"], "level_id": level_id}
+        class_payload = {
+            "name": cls["name"],
+            "tagline": cls.get("tagline", ""),
+            "image_link": cls.get("image_prompt", ""),
+            "level_id": level_response  # Pass the created level ID
+        }
         class_response = post_data(ENDPOINTS["create_class"], class_payload)
-        class_id = class_response.get("id") if class_response else None
-        if not class_id:
-            logging.error("Failed to create class: %s", cls["name"])
+        
+        if class_response:
+            class_id = class_response
+        else:
+            print("Skipping class creation due to missing class ID.")
             continue
 
+        # Iterate over subjects within the class
         for subject in cls.get("subjects", []):
             subject_payload = {
-                "title": subject["title"],
+                "name": subject["title"],
                 "tagline": subject.get("tagline", ""),
                 "image_link": subject.get("image_prompt", ""),
-                "class_id": class_id,
+                "class_id": class_id  # Pass the created class ID
             }
             subject_response = post_data(ENDPOINTS["create_subject"], subject_payload)
-            subject_id = subject_response.get("id") if subject_response else None
-            if not subject_id:
-                logging.error("Failed to create subject: %s", subject["title"])
+            
+            if subject_response:
+                subject_id = subject_response
+            else:
+                print("Skipping subject creation due to missing subject ID.")
                 continue
 
+            # Iterate over chapters within the subject
             for chapter in subject.get("chapters", []):
                 chapter_payload = {
-                    "title": chapter["title"],
+                    "name": chapter["title"],
                     "tagline": chapter.get("tagline", ""),
-                    "subject_id": subject_id,
+                    "image_link": chapter.get("image_prompt", ""),
+                    "subject_id": subject_id  # Pass the created subject ID
                 }
                 chapter_response = post_data(ENDPOINTS["create_chapter"], chapter_payload)
-                chapter_id = chapter_response.get("id") if chapter_response else None
-                if not chapter_id:
-                    logging.error("Failed to create chapter: %s", chapter["title"])
+                
+                if chapter_response:
+                    chapter_id = chapter_response
+                else:
+                    print("Skipping chapter creation due to missing chapter ID.")
                     continue
 
+                # Iterate over topics within the chapter
                 for topic in chapter.get("topics", []):
                     topic_payload = {
-                        "title": topic["title"],
-                        "description": topic.get("description", ""),
-                        "chapter_id": chapter_id,
+                        "name": topic["title"],
+                        "tagline": chapter.get("tagline", ""),
+                        "details": topic.get("details", ""),
+                        "image_link": topic.get("image_prompt", ""),
+                        "subtopics":topic.get("subtopics",[]),
+                        "chapter_id": chapter_id  # Pass the created chapter ID
                     }
-                    topic_response = post_data(ENDPOINTS["create_topic"], topic_payload)
-                    if not topic_response:
-                        logging.error("Failed to create topic: %s", topic["title"])
+                    post_data(ENDPOINTS["create_topic"], topic_payload)
 
-logging.info("Data insertion completed.")
+print("Data insertion completed.")
