@@ -10,6 +10,7 @@ class TopicBase(BaseModel):
     tagline: str 
     image_link: str
     details: Optional[str] = None
+    subtopics: Optional[List] = None 
 
 class TopicCreate(TopicBase):
     name: str
@@ -17,6 +18,7 @@ class TopicCreate(TopicBase):
     tagline: str 
     chapter_id: str
     image_link: str
+    subtopics: Optional[List] = None 
 
 class ReadTopicRequest(BaseModel):
     limit: Optional[int] = 10
@@ -27,7 +29,7 @@ class TopicUpdate(BaseModel):
     details: Optional[str]
     chapter_id: Optional[str]
     image_link: Optional[str]
-
+    subtopics: Optional[List] = None 
 
 class Topic(TopicBase):
     id: str

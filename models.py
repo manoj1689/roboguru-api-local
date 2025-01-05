@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
 import uuid
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSON
 
 class BaseMixin:
     is_deleted = Column(Boolean, default=False)
@@ -58,6 +58,7 @@ class Topic(Base, BaseMixin):
     details = Column(String, nullable=True)
     tagline = Column(String, nullable=True)
     image_link = Column(String, nullable=True)
+    subtopics = Column(JSON, default=list, nullable=True)
     is_trending = Column(Boolean, default=False)  
     priority = Column(Integer, default=0)  
 

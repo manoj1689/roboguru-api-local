@@ -25,7 +25,8 @@ def create_topic(
             "chapter_id":db_topic.chapter_id,
             "details":db_topic.details,
             "tagline": db_topic.tagline,
-            "image_link": db_topic.image_link
+            "image_link": db_topic.image_link,
+            "subtopics": db_topic.subtopics
         }
         return create_response(success=True, message="Topic created successfully", data=response_data)
     except HTTPException as e:
@@ -52,7 +53,8 @@ def read_all_topics(
                 "chapter_id":sub.chapter_id,
                 "tagline": sub.tagline,
                 "details": sub.details,
-                "image_link": sub.image_link
+                "image_link": sub.image_link,
+                "subtopics": sub.subtopics
             }
             for sub in topics
         ]
@@ -79,7 +81,8 @@ def read_topic(
                 "chapter_id":sub.chapter_id,
                 "tagline": sub.tagline,
                 "details": sub.details,
-                "image_link": sub.image_link
+                "image_link": sub.image_link,
+                "subtopics": sub.subtopics
             }
             for sub in db_topic
         ]
@@ -106,7 +109,7 @@ def edit_topic(
         db_topic.tagline = updated_topic.tagline
         db_topic.image_link = updated_topic.image_link
         db_topic.chapter_id = updated_topic.chapter_id
-
+        db_topic.subtopics = updated_topic.subtopics
         # Validate chapter existence
         chapter = services.chapters.get_chapter(db=db, chapter_id=updated_topic.chapter_id)
         if not chapter:
@@ -123,6 +126,8 @@ def edit_topic(
             "tagline": db_topic.tagline,
             "image_link": db_topic.image_link,
             "chapter_id": db_topic.chapter_id,
+            "subtopics": db_topic.subtopics
+            
         }
         return create_response(success=True, message="Topic updated successfully", data=response_data)
     except HTTPException as e:

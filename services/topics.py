@@ -25,7 +25,7 @@ def get_all_topics(db: Session, limit: int = 10, name: Optional[str] = None):
 
 
 def create_topic(db: Session, topic: TopicCreate, chapter_id: int):
-    db_topic = Topic(name=topic.name,  details=topic.details, chapter_id=chapter_id, tagline=topic.tagline, image_link=topic.image_link)
+    db_topic = Topic(name=topic.name,  details=topic.details, chapter_id=chapter_id, tagline=topic.tagline, image_link=topic.image_link, subtopics=topic.subtopics)
 
     # Check for duplicate class name
     existing_class = db.query(Chapter).filter(Chapter.id == chapter_id).first()
