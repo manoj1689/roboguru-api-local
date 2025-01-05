@@ -111,7 +111,7 @@ def read_level_all_list(
     
 @router.put("/{level_id}", response_model=None)
 def update_level(
-    level_id: int,
+    level_id: str,
     level: EducationLevelUpdate = Body(...),
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user),
@@ -145,7 +145,7 @@ def update_level(
 
 @router.delete("/{level_id}", response_model=None)
 def delete_level(
-    level_id: int,
+    level_id: str,
     # delete_request: EducationLevelDeleteRequest = Body(...),
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user),

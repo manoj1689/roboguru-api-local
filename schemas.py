@@ -3,6 +3,7 @@ from typing import Optional, Dict, List
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime, date
 import uuid
+from fastapi import UploadFile, File
 
 class TopicBase(BaseModel):
     name: str
@@ -14,7 +15,7 @@ class TopicCreate(TopicBase):
     name: str
     details: Optional[str] = None
     tagline: str 
-    chapter_id: int
+    chapter_id: str
     image_link: str
 
 class ReadTopicRequest(BaseModel):
@@ -24,12 +25,12 @@ class ReadTopicRequest(BaseModel):
 class TopicUpdate(BaseModel):
     name: Optional[str]
     details: Optional[str]
-    chapter_id: Optional[int]
+    chapter_id: Optional[str]
     image_link: Optional[str]
 
 
 class Topic(TopicBase):
-    id: int
+    id: str
 
     class Config:
         from_attributes = True  
@@ -43,7 +44,7 @@ class ChapterCreate(ChapterBase):
     name: str
     tagline: str 
     image_link: str
-    subject_id: int
+    subject_id: str
 
 class ReadChapterRequest(BaseModel):
     limit: Optional[int] = 10
@@ -52,12 +53,12 @@ class ReadChapterRequest(BaseModel):
 class ChapterUpdate(BaseModel):
     name: Optional[str]
     tagline: Optional[str] 
-    subject_id: Optional[int] 
+    subject_id: Optional[str] 
     image_link: Optional[str]
 
 
 class Chapter(ChapterBase):
-    id: int
+    id: str
     topics: list[Topic] = []
 
     class Config:
@@ -75,25 +76,25 @@ class ReadSubjectRequest(BaseModel):
 class SubjectCreate(SubjectBase):
     name: str
     tagline: str 
-    class_id : int 
+    class_id : str 
     image_link: str
 
 class SubjectUpdate(BaseModel):
     name: Optional[str]
     tagline: Optional[str]
-    class_id: Optional[int]
+    class_id: Optional[str]
     image_link: Optional[str]
 
 class SubjectData(SubjectBase):
-    id: int
+    id: str
     name: str
     tagline: str 
-    class_id : int 
+    class_id : str 
     image_link: str
 
 
 class Subject(SubjectBase):
-    id: int
+    id: str
     chapters: list[Chapter] = []
 
     class Config:
@@ -107,7 +108,7 @@ class ClassBase(BaseModel):
 class ClassCreate(ClassBase):
     name: str
     tagline: str 
-    level_id: int
+    level_id: str
     image_link: str
 
 class ReadClassesRequest(BaseModel):
@@ -115,13 +116,13 @@ class ReadClassesRequest(BaseModel):
     name: Optional[str] = None
     
 class ClassUpdate(BaseModel):
-    level_id: Optional[int]
+    level_id: Optional[str]
     name: Optional[str]
     tagline: Optional[str]
     image_link: Optional[str]
 
 class Class(ClassBase):
-    id: int
+    id: str
 
     class Config:
         from_attributes = True  
@@ -142,10 +143,10 @@ class ReadEducationLevelRequest(BaseModel):
     name: Optional[str] = None
 
 class EducationLevel(EducationLevelBase):
-    id: int
+    id: str
 
 class EducationLevelResponse(EducationLevelBase):
-    id: int
+    id: str
     classes: List[str] = []
 
     class Config:
@@ -250,6 +251,45 @@ class UpdateUserProfileRequest(BaseModel):
     language: Optional[str]
 
 class UpdateTrendingTopicRequest(BaseModel):
-    topic_id: int
+    topic_id: str
     is_trending: bool
     priority: int = 0
+
+
+class STTInput(BaseModel):
+    language_code: Optional[str] = Field("en", description="Language code of the audio")
+
+class STTOutput(BaseModel):
+    audio_text: str
+    audio_time_in_sec: float
+    model_used: str
+    language_code: str
+    timestamp: datetime
+    additional_data: Optional[dict] = None
+
+class TTSInput(BaseModel):
+    text: str = Field(..., description="Text to convert to speech")
+    language_code: Optional[str] = Field("en", description="Language code for speech synthesis")
+
+class TTSOutput(BaseModel):
+    audio_file: str  # Base64 encoded audio
+    characters_used: int
+    timestamp: datetime
+    language_used: str
+    model_used: str
+    additional_data: Optional[dict] = None
+
+class UploadImageOutput(BaseModel):
+    image_urls: List[str]
+
+class ImagesToTextInput(BaseModel):
+    image_urls: List[str] = Field(..., description="List of Image URLs")
+    prompt: str = Field(..., description="Prompt for image analysis")
+    language_code: Optional[str] = Field("en", description="Language code for the response")
+
+class ImagesToTextOutput(BaseModel):
+    text_response: str
+    model_used: str
+    token_used: int
+    language_used: str
+    additional_data: Optional[dict] = None

@@ -13,7 +13,7 @@ class BaseMixin:
 
 class EducationLevel(Base, BaseMixin):
     __tablename__ = "education_levels"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, unique=True, index=True, nullable=False)
     description = Column(String, nullable=True)
     classes = relationship("Class", back_populates="education_level")
@@ -21,11 +21,11 @@ class EducationLevel(Base, BaseMixin):
 
 class Class(Base, BaseMixin):
     __tablename__ = "classes"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, index=True)
     tagline = Column(String, nullable=True)
     image_link = Column(String, nullable=True)
-    level_id = Column(Integer, ForeignKey("education_levels.id"))
+    level_id = Column(String, ForeignKey("education_levels.id"))
     education_level = relationship("EducationLevel", back_populates="classes")
     subjects = relationship("Subject", back_populates="class_")
     users = relationship("User", back_populates="user_class_details")
@@ -33,9 +33,9 @@ class Class(Base, BaseMixin):
 
 class Subject(Base, BaseMixin):
     __tablename__ = "subjects"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, index=True)
-    class_id = Column(Integer, ForeignKey("classes.id"))
+    class_id = Column(String, ForeignKey("classes.id"))
     tagline = Column(String, nullable=True)
     image_link = Column(String, nullable=True)
     class_ = relationship("Class", back_populates="subjects")
@@ -43,9 +43,9 @@ class Subject(Base, BaseMixin):
 
 class Chapter(Base, BaseMixin):
     __tablename__ = "chapters"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, index=True)
-    subject_id = Column(Integer, ForeignKey("subjects.id"))
+    subject_id = Column(String, ForeignKey("subjects.id"))
     tagline = Column(String, nullable=True)
     image_link = Column(String, nullable=True)
     subject = relationship("Subject", back_populates="chapters")
@@ -53,7 +53,7 @@ class Chapter(Base, BaseMixin):
 
 class Topic(Base, BaseMixin):
     __tablename__ = "topics"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, index=True)
     details = Column(String, nullable=True)
     tagline = Column(String, nullable=True)
@@ -61,8 +61,8 @@ class Topic(Base, BaseMixin):
     is_trending = Column(Boolean, default=False)  
     priority = Column(Integer, default=0)  
 
-    chapter_id = Column(Integer, ForeignKey("chapters.id"))
-    class_id = Column(Integer, ForeignKey("classes.id")) 
+    chapter_id = Column(String, ForeignKey("chapters.id"))
+    class_id = Column(String, ForeignKey("classes.id")) 
     chapter = relationship("Chapter", back_populates="topics")
     class_ = relationship("Class", back_populates="topics") 
 
@@ -78,8 +78,8 @@ class User(Base, BaseMixin):
     email = Column(String, nullable=True)
     date_of_birth = Column(Date, nullable=True)
     occupation = Column(String, nullable=True)
-    education_level = Column(Integer, ForeignKey("education_levels.id"))  
-    user_class = Column(Integer, ForeignKey("classes.id")) 
+    education_level = Column(String, ForeignKey("education_levels.id"))  
+    user_class = Column(String, ForeignKey("classes.id")) 
     language = Column(String, nullable=True)  
     profile_image = Column(String, nullable=True) 
 

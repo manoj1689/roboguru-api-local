@@ -64,7 +64,7 @@ def read_all_topics(
 
 @router.get("/chapter/{chapter_id}", response_model=None)
 def read_topic(
-    chapter_id: int, 
+    chapter_id: str, 
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user), 
 ):
@@ -90,7 +90,7 @@ def read_topic(
 
 @router.put("/{topic_id}", response_model=None)
 def edit_topic(
-    topic_id: int,
+    topic_id: str,
     updated_topic: schemas.TopicUpdate = Body(...),
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user),
@@ -133,7 +133,7 @@ def edit_topic(
 
 @router.delete("/{topic_id}", response_model=None)
 def soft_delete_topic(
-    topic_id: int,
+    topic_id: str,
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user),
 ):

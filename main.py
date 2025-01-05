@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db
 import models
-from routes import classes, subjects, chapters, topics, login, chat, level, users, trending
+from routes import classes, subjects, chapters, topics, login, chat, level, users, trending, openaiengine
 from services.users import create_superadmin
 
 models.Base.metadata.create_all(bind=engine)
@@ -27,6 +27,8 @@ app.include_router(chapters.router, prefix="/chapters", tags=["chapters"])
 app.include_router(topics.router, prefix="/topics", tags=["topics"])
 app.include_router(chat.router, prefix="/chat", tags=["chat"])
 app.include_router(trending.router, prefix="/trending", tags=["trending"])
+app.include_router(openaiengine.router, prefix="/openaiengine", tags=["openaiengine"])
+
 
 
 @app.on_event("startup")

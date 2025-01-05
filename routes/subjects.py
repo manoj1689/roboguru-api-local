@@ -69,7 +69,7 @@ def read_all_subjects(
     
 @router.get("/class/{class_id}", response_model=None)
 async def get_subjects_by_class(
-    class_id: int, 
+    class_id: str, 
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user),  
 ):
@@ -94,7 +94,7 @@ async def get_subjects_by_class(
 
 @router.put("/{subject_id}", response_model=None)
 def update_subject(
-    subject_id: int,
+    subject_id: str,
     subject_data: schemas.SubjectUpdate = Body(...),
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user),
@@ -137,7 +137,7 @@ def update_subject(
 
 @router.delete("/{subject_id}", response_model=None)
 def delete_subject(
-    subject_id: int,
+    subject_id: str,
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user),
 ):

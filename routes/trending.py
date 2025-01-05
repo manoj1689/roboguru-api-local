@@ -41,7 +41,7 @@ def update_trending_topic(
 
 @router.get("/trending_topics/by_class/{class_id}")
 def get_trending_topics_by_class(
-    class_id: int,
+    class_id: str,
     db: Session = Depends(get_db),
 ):
     try:

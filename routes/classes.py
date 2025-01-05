@@ -107,7 +107,7 @@ def read_all_classes(
 
 @router.get("/level/{level_id}", response_model=None)
 def read_class(
-    level_id: int,
+    level_id: str,
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user)
 ):
@@ -133,7 +133,7 @@ def read_class(
 
 @router.put("/{class_id}", response_model=None)
 def update_class(
-    class_id: int,
+    class_id: str,
     class_data: schemas.ClassUpdate,
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user),
@@ -181,7 +181,7 @@ def update_class(
 
 @router.delete("/{class_id}", response_model=None)
 def delete_class(
-    class_id: int,
+    class_id: str,
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user),
 ):

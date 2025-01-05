@@ -1,0 +1,538 @@
+{
+    "levels": [
+      {
+        "id": "L1",
+        "name": "Primary Level",
+        "classes": [
+          {
+            "id": "C1",
+            "name": "Class 1",
+            "subjects": [
+              {
+                "id": "S1",
+                "title": "English",
+                "tagline": "Building basic reading and writing skills.",
+                "image_prompt": "A classroom with children learning the alphabet and writing simple words."
+              },
+              {
+                "id": "S2",
+                "title": "Mathematics",
+                "tagline": "Learning numbers, shapes, and patterns.",
+                "image_prompt": "Children solving basic math problems with colorful blocks."
+              },
+              {
+                "id": "S3",
+                "title": "Environmental Studies (EVS)",
+                "tagline": "Exploring family, surroundings, and nature.",
+                "image_prompt": "Children discussing family trees and drawing their surroundings."
+              },
+              {
+                "id": "S4",
+                "title": "Hindi",
+                "tagline": "Introduction to our mother tongue.",
+                "image_prompt": "A teacher guiding students in writing Hindi alphabets."
+              }
+            ]
+          },
+          {
+            "id": "C2",
+            "name": "Class 2",
+            "subjects": [
+              {
+                "id": "S5",
+                "title": "English",
+                "tagline": "Enhancing storytelling and creative writing skills.",
+                "image_prompt": "Students reading stories and creating their own stories."
+              },
+              {
+                "id": "S6",
+                "title": "Mathematics",
+                "tagline": "Understanding basic arithmetic and problem-solving.",
+                "image_prompt": "Children solving addition and subtraction problems."
+              },
+              {
+                "id": "S7",
+                "title": "Environmental Studies (EVS)",
+                "tagline": "Discovering plants, animals, and seasons.",
+                "image_prompt": "Children observing plant models and discussing seasons."
+              },
+              {
+                "id": "S8",
+                "title": "Hindi",
+                "tagline": "Learning to form simple sentences.",
+                "image_prompt": "Students practicing Hindi sentences on a chalkboard."
+              }
+            ]
+          },
+          {
+            "id": "C3",
+            "name": "Class 3",
+            "subjects": [
+              {
+                "id": "S9",
+                "title": "English",
+                "tagline": "Developing reading comprehension and grammar basics.",
+                "image_prompt": "Children reading passages and identifying grammar rules."
+              },
+              {
+                "id": "S10",
+                "title": "Mathematics",
+                "tagline": "Working with numbers up to 1000 and fractions.",
+                "image_prompt": "Students solving problems on fractions and large numbers."
+              },
+              {
+                "id": "S11",
+                "title": "Environmental Studies (EVS)",
+                "tagline": "Understanding the human body, occupations, and maps.",
+                "image_prompt": "Students exploring human body models and maps."
+              },
+              {
+                "id": "S12",
+                "title": "Hindi",
+                "tagline": "Improving comprehension and storytelling in Hindi.",
+                "image_prompt": "Students reading Hindi stories and writing summaries."
+              }
+            ]
+          },
+          {
+            "id": "C4",
+            "name": "Class 4",
+            "subjects": [
+              {
+                "id": "S13",
+                "title": "English",
+                "tagline": "Mastering advanced grammar and paragraph writing.",
+                "image_prompt": "Students writing paragraphs and learning grammar."
+              },
+              {
+                "id": "S14",
+                "title": "Mathematics",
+                "tagline": "Understanding large numbers, fractions, and geometry.",
+                "image_prompt": "Children solving geometry problems using rulers."
+              },
+              {
+                "id": "S15",
+                "title": "Environmental Studies (EVS)",
+                "tagline": "Exploring pollution, natural resources, and responsibility.",
+                "image_prompt": "Students learning about pollution effects with charts."
+              },
+              {
+                "id": "S16",
+                "title": "Hindi",
+                "tagline": "Enhancing creative writing and comprehension.",
+                "image_prompt": "Students writing creative essays in Hindi."
+              }
+            ]
+          },
+          {
+            "id": "C5",
+            "name": "Class 5",
+            "subjects": [
+              {
+                "id": "S17",
+                "title": "English",
+                "tagline": "Expanding vocabulary and essay writing skills.",
+                "image_prompt": "Students writing essays and improving vocabulary."
+              },
+              {
+                "id": "S18",
+                "title": "Mathematics",
+                "tagline": "Learning decimals, percentages, and basic algebra.",
+                "image_prompt": "Children solving problems on percentages and decimals."
+              },
+              {
+                "id": "S19",
+                "title": "Environmental Studies (EVS)",
+                "tagline": "Exploring the solar system and Indian heritage.",
+                "image_prompt": "Children observing solar system models and cultural artifacts."
+              },
+              {
+                "id": "S20",
+                "title": "Hindi",
+                "tagline": "Developing strong comprehension and storytelling skills.",
+                "image_prompt": "Students practicing comprehension passages in Hindi."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "L2",
+        "name": "Middle School",
+        "classes": [
+          {
+            "id": "C6",
+            "name": "Class 6",
+            "subjects": [
+              {
+                "id": "S21",
+                "title": "English",
+                "tagline": "Exploring literature and grammar.",
+                "image_prompt": "Students analyzing short stories and grammar rules."
+              },
+              {
+                "id": "S22",
+                "title": "Mathematics",
+                "tagline": "Learning algebra, geometry, and basic statistics.",
+                "image_prompt": "Students solving equations and creating bar graphs."
+              },
+              {
+                "id": "S23",
+                "title": "Science",
+                "tagline": "Introduction to physics, chemistry, and biology.",
+                "image_prompt": "Children experimenting with light refraction and plant models."
+              },
+              {
+                "id": "S24",
+                "title": "Social Science",
+                "tagline": "Understanding ancient history and geography.",
+                "image_prompt": "Students learning about ancient civilizations and maps."
+              },
+              {
+                "id": "S25",
+                "title": "Hindi",
+                "tagline": "Improving literature and grammar.",
+                "image_prompt": "Students reading Hindi poems and analyzing grammar."
+              },
+              {
+                "id": "S26",
+                "title": "Sanskrit",
+                "tagline": "Introduction to the ancient language of India.",
+                "image_prompt": "Students practicing Sanskrit shlokas and vocabulary on a whiteboard."
+              }
+            ]
+          },
+          {
+            "id": "C7",
+            "name": "Class 7",
+            "subjects": [
+              {
+                "id": "S27",
+                "title": "English",
+                "tagline": "Fiction, poetry, and creative writing.",
+                "image_prompt": "Students writing poems and reading fiction stories."
+              },
+              {
+                "id": "S28",
+                "title": "Mathematics",
+                "tagline": "Advanced arithmetic and equations.",
+                "image_prompt": "Students solving advanced math problems on whiteboards."
+              },
+              {
+                "id": "S29",
+                "title": "Science",
+                "tagline": "Heat, acids, and reproduction in plants.",
+                "image_prompt": "Students conducting experiments on heat and plant biology."
+              },
+              {
+                "id": "S30",
+                "title": "Social Science",
+                "tagline": "Exploring medieval India and the environment.",
+                "image_prompt": "Students discussing medieval history and environmental conservation."
+              },
+              {
+                "id": "S31",
+                "title": "Hindi",
+                "tagline": "Enhancing creative writing in Hindi.",
+                "image_prompt": "Students crafting creative stories in Hindi."
+              },
+              {
+                "id": "S32",
+                "title": "Sanskrit",
+                "tagline": "Advancing knowledge in the ancient language.",
+                "image_prompt": "Students practicing Sanskrit grammar and reading ancient texts."
+              }
+            ]
+          },
+          {
+            "id": "C8",
+            "name": "Class 8",
+            "subjects": [
+              {
+                "id": "S33",
+                "title": "English",
+                "tagline": "Letter writing and comprehension.",
+                "image_prompt": "Students practicing formal and informal letter writing."
+              },
+              {
+                "id": "S34",
+                "title": "Mathematics",
+                "tagline": "Quadrilaterals, probability, and graphs.",
+                "image_prompt": "Students solving geometry and probability problems."
+              },
+              {
+                "id": "S35",
+                "title": "Science",
+                "tagline": "Force, friction, and cell structure.",
+                "image_prompt": "Students exploring physics experiments and cell models."
+              },
+              {
+                "id": "S36",
+                "title": "Social Science",
+                "tagline": "History of freedom struggle and geography of resources.",
+                "image_prompt": "Students discussing the Indian freedom struggle and resource maps."
+              },
+              {
+                "id": "S37",
+                "title": "Hindi",
+                "tagline": "Improving comprehension and essay writing.",
+                "image_prompt": "Students reading Hindi essays and writing summaries."
+              },
+              {
+                "id": "S38",
+                "title": "Sanskrit",
+                "tagline": "Mastering Sanskrit grammar and vocabulary.",
+                "image_prompt": "Students reciting Sanskrit shlokas and solving grammar exercises."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "L3",
+        "name": "High School",
+        "classes": [
+          {
+            "id": "C9",
+            "name": "Class 9",
+            "subjects": [
+              {
+                "id": "S39",
+                "title": "English",
+                "tagline": "Advanced grammar and literature.",
+                "image_prompt": "Students analyzing poetry and prose in a modern classroom."
+              },
+              {
+                "id": "S40",
+                "title": "Mathematics",
+                "tagline": "Geometry, algebra, and trigonometry.",
+                "image_prompt": "Students solving trigonometry problems on scientific calculators."
+              },
+              {
+                "id": "S41",
+                "title": "Science",
+                "tagline": "Laws of motion, atoms, and tissues.",
+                "image_prompt": "Students conducting physics experiments and studying cell biology."
+              },
+              {
+                "id": "S42",
+                "title": "Social Science",
+                "tagline": "French Revolution and democratic systems.",
+                "image_prompt": "Students discussing historical revolutions and democracy."
+              },
+              {
+                "id": "S43",
+                "title": "Hindi",
+                "tagline": "Analyzing literature and advanced writing.",
+                "image_prompt": "Students reading Hindi prose and writing essays."
+              },
+              {
+                "id": "S44",
+                "title": "Sanskrit",
+                "tagline": "Deepening understanding of Sanskrit texts.",
+                "image_prompt": "Students reading Sanskrit texts and interpreting verses."
+              }
+            ]
+          },
+          {
+            "id": "C10",
+            "name": "Class 10",
+            "subjects": [
+              {
+                "id": "S45",
+                "title": "English",
+                "tagline": "Creative writing and comprehension.",
+                "image_prompt": "Students working on essay topics and comprehension passages."
+              },
+              {
+                "id": "S46",
+                "title": "Mathematics",
+                "tagline": "Trigonometry and quadratic equations.",
+                "image_prompt": "Students solving quadratic equations on a board."
+              },
+              {
+                "id": "S47",
+                "title": "Science",
+                "tagline": "Electricity, magnetism, and heredity.",
+                "image_prompt": "Students experimenting with electrical circuits and genetics."
+              },
+              {
+                "id": "S48",
+                "title": "Social Science",
+                "tagline": "Nationalism and economic sectors.",
+                "image_prompt": "Students discussing nationalism and the economy."
+              },
+              {
+                "id": "S49",
+                "title": "Hindi",
+                "tagline": "Mastering advanced Hindi writing skills.",
+                "image_prompt": "Students crafting essays and analyzing Hindi literature."
+              },
+              {
+                "id": "S50",
+                "title": "Sanskrit",
+                "tagline": "Perfecting Sanskrit grammar and literature.",
+                "image_prompt": "Students interpreting Sanskrit shlokas and advanced texts."
+              }
+            ]
+          },
+          {
+            "id": "C11",
+            "name": "Class 11",
+            "subjects": [
+              {
+                "id": "S51",
+                "title": "English",
+                "tagline": "Exploring classic literature, poetry, and advanced grammar.",
+                "image_prompt": "Students analyzing classic poems and writing essays in a bright classroom."
+              },
+              {
+                "id": "S52",
+                "title": "Physics",
+                "tagline": "Exploring motion, waves, and energy.",
+                "image_prompt": "Students conducting physics experiments with apparatuses demonstrating motion and energy."
+              },
+              {
+                "id": "S53",
+                "title": "Chemistry",
+                "tagline": "Studying chemical reactions and bonding.",
+                "image_prompt": "Students mixing chemicals in a lab and observing reactions with safety gear."
+              },
+              {
+                "id": "S54",
+                "title": "Biology",
+                "tagline": "Understanding plant and animal biology.",
+                "image_prompt": "Students observing cell structures under a microscope and conducting dissections."
+              },
+              {
+                "id": "S55",
+                "title": "Mathematics",
+                "tagline": "Delving into calculus, algebra, and trigonometry.",
+                "image_prompt": "Students solving calculus equations on whiteboards and graphing functions."
+              },
+              {
+                "id": "S56",
+                "title": "Accountancy",
+                "tagline": "Learning the principles of financial accounting.",
+                "image_prompt": "Students analyzing ledgers and balancing accounts in an interactive session."
+              },
+              {
+                "id": "S57",
+                "title": "Business Studies",
+                "tagline": "Exploring business principles and organizational strategies.",
+                "image_prompt": "Students presenting business plans and discussing case studies."
+              },
+              {
+                "id": "S58",
+                "title": "Economics",
+                "tagline": "Understanding markets, demand-supply, and economic systems.",
+                "image_prompt": "Students analyzing demand-supply graphs and market trends."
+              },
+              {
+                "id": "S59",
+                "title": "History",
+                "tagline": "Exploring ancient civilizations and revolutions.",
+                "image_prompt": "Students studying historical timelines and discussing revolutions."
+              },
+              {
+                "id": "S60",
+                "title": "Political Science",
+                "tagline": "Understanding governance, democracy, and political ideologies.",
+                "image_prompt": "Students debating modern governance systems in a lively discussion."
+              },
+              {
+                "id": "S61",
+                "title": "Psychology",
+                "tagline": "Examining human behavior and cognitive processes.",
+                "image_prompt": "Students discussing psychological experiments and conducting cognitive tests."
+              },
+              {
+                "id": "S62",
+                "title": "Sanskrit",
+                "tagline": "Studying the ancient language and its grammar.",
+                "image_prompt": "Students interpreting Sanskrit shlokas and practicing advanced grammar."
+              }
+            ]
+          },
+          {
+            "id": "C12",
+            "name": "Class 12",
+            "subjects": [
+              {
+                "id": "S63",
+                "title": "English",
+                "tagline": "Mastering advanced comprehension, creative writing, and literary analysis.",
+                "image_prompt": "Students discussing modern literature and writing critical essays."
+              },
+              {
+                "id": "S64",
+                "title": "Physics",
+                "tagline": "Mastering advanced concepts in electricity, magnetism, and optics.",
+                "image_prompt": "Students working with advanced lab equipment for electricity and magnetism experiments."
+              },
+              {
+                "id": "S65",
+                "title": "Chemistry",
+                "tagline": "Delving deeper into organic, inorganic, and physical chemistry.",
+                "image_prompt": "Students performing titrations and analyzing organic reactions in a lab."
+              },
+              {
+                "id": "S66",
+                "title": "Biology",
+                "tagline": "Focusing on genetics, evolution, and biotechnology.",
+                "image_prompt": "Students studying genetic diagrams and observing biotech tools."
+              },
+              {
+                "id": "S67",
+                "title": "Mathematics",
+                "tagline": "Exploring advanced calculus, statistics, and probability.",
+                "image_prompt": "Students solving statistical problems and analyzing probability graphs."
+              },
+              {
+                "id": "S68",
+                "title": "Accountancy",
+                "tagline": "Mastering advanced accounting principles.",
+                "image_prompt": "Students preparing financial statements and solving complex accounting problems."
+              },
+              {
+                "id": "S69",
+                "title": "Business Studies",
+                "tagline": "Analyzing business models and strategies for success.",
+                "image_prompt": "Students presenting corporate strategies and analyzing case studies."
+              },
+              {
+                "id": "S70",
+                "title": "Economics",
+                "tagline": "Understanding global trade, markets, and economic policies.",
+                "image_prompt": "Students analyzing international trade graphs and market trends."
+              },
+              {
+                "id": "S71",
+                "title": "History",
+                "tagline": "Studying modern history and cultural transformations.",
+                "image_prompt": "Students examining historical documents and artifacts."
+              },
+              {
+                "id": "S72",
+                "title": "Political Science",
+                "tagline": "Exploring global political systems and ideologies.",
+                "image_prompt": "Students debating international policies and political ideologies."
+              },
+              {
+                "id": "S73",
+                "title": "Psychology",
+                "tagline": "Understanding advanced psychological concepts and applications.",
+                "image_prompt": "Students conducting psychological case studies and experiments."
+              },
+              {
+                "id": "S74",
+                "title": "Sanskrit",
+                "tagline": "Mastering Sanskrit literature and complex grammar.",
+                "image_prompt": "Students interpreting ancient Sanskrit texts and analyzing grammar intricacies."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
