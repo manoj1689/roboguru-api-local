@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from models import Topic, Chapter, Subject, Class
+from models import Topic, Chapter, Subject, User
 import logging
 from database import get_db
 from schemas import UpdateTrendingTopicRequest
@@ -12,6 +12,7 @@ router = APIRouter()
 def update_trending_topic(
     request: UpdateTrendingTopicRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(superadmin_only),     
 ):
     try:
         topic = db.query(Topic).filter(Topic.id == request.topic_id).first()
@@ -43,6 +44,7 @@ def update_trending_topic(
 def get_trending_topics_by_class(
     class_id: str,
     db: Session = Depends(get_db),
+    current_user: User = Depends(superadmin_only), 
 ):
     try:
         trending_topics = (

@@ -26,22 +26,104 @@ MAX_HISTORY_TOKENS = 1000
 MODEL = "gpt-4o-mini"
 
 
+# @router.post("/education/chat", response_model=None)
+# async def education_chat(
+#     request: ChatRequest, 
+#     current_user: str = Depends(get_current_user), 
+#     db: Session = Depends(get_db)
+# ):
+#     user_id = current_user["id"]
+
+#     # Check for existing active session
+#     session = db.query(SessionModel).filter(
+#         SessionModel.user_id == user_id, SessionModel.status == "active"
+#     ).first()
+
+#     if not session:
+#         # Create a new session if none exists
+#         session_id = str(uuid.uuid4())  
+#         new_session = SessionModel(
+#             id=session_id,
+#             user_id=user_id,
+#             status="active",
+#             started_at=datetime.utcnow()
+#         )
+#         db.add(new_session)
+#         db.commit()
+#         db.refresh(new_session)
+#         session = new_session
+
+#     existing_chat = db.query(ChatModel).filter(ChatModel.session_id == session.id).all()
+
+#     chat_history_context = [
+#         {
+#             "user": chat.request_message,
+#             "bot": chat.response_message
+#         } for chat in existing_chat
+#     ] if existing_chat else []
+
+#     history_tokens = calculate_tokens(chat_history_context, model=MODEL)
+#     if history_tokens > MAX_HISTORY_TOKENS:
+#         truncated_history = truncate_chat_history(chat_history_context, MAX_HISTORY_TOKENS)
+#         summarized_context = summarize_history(truncated_history)
+#     else:
+#         summarized_context = chat_history_context
+
+#     prompt = f"""
+#     ### Educational Insights
+#     The user has asked an educational question. 
+
+#     ### Chat History Summary
+#     {summarized_context}  
+
+#     ### User Query
+#     {request.request_message}  
+
+#     ### Response
+#     Provide a knowledgeable, concise, and direct answer to the user's educational question.
+#     The AI knows everything related to education and learning.
+#     """
+
+#     try:
+#         response = openai.chat.completions.create(
+#             model=MODEL,
+#             messages=[{"role": "system", "content": prompt}],
+#             max_tokens=500
+#         )
+#         bot = response.choices[0].message.content.strip()
+
+#         # Save chat history to the database
+#         save_chat_history(db, session.id, request.request_message, bot)
+
+#         # Return JSON-serializable response
+#         return create_response(
+#             success=True,
+#             message="Educational response generated successfully",
+#             data={
+#                 "session_id": str(session.id),  
+#                 "request_message": request.request_message,
+#                 "response_message": bot,
+#                 "status": "active",
+#                 "timestamp": datetime.utcnow().isoformat()  
+#             }
+#         )
+#     except Exception as e:
+#         return create_response(success=False, message=f"An unexpected error occurred: {str(e)}")
+
 @router.post("/education/chat", response_model=None)
 async def education_chat(
     request: ChatRequest, 
     current_user: str = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
-    user_id = current_user["id"]
-
-    # Check for existing active session
+    # user_id = current_user["id"]
+    user_id = current_user.user_id
     session = db.query(SessionModel).filter(
         SessionModel.user_id == user_id, SessionModel.status == "active"
     ).first()
 
     if not session:
-        # Create a new session if none exists
-        session_id = str(uuid.uuid4())  
+        session_id = str(uuid.uuid4())
         new_session = SessionModel(
             id=session_id,
             user_id=user_id,
@@ -54,7 +136,6 @@ async def education_chat(
         session = new_session
 
     existing_chat = db.query(ChatModel).filter(ChatModel.session_id == session.id).all()
-
     chat_history_context = [
         {
             "user": chat.request_message,
@@ -71,17 +152,13 @@ async def education_chat(
 
     prompt = f"""
     ### Educational Insights
-    The user has asked an educational question. 
-
-    ### Chat History Summary
-    {summarized_context}  
+    {summarized_context}
 
     ### User Query
-    {request.request_message}  
+    {request.request_message}
 
     ### Response
-    Provide a knowledgeable, concise, and direct answer to the user's educational question.
-    The AI knows everything related to education and learning.
+    Provide a knowledgeable and concise answer.
     """
 
     try:
@@ -90,25 +167,30 @@ async def education_chat(
             messages=[{"role": "system", "content": prompt}],
             max_tokens=500
         )
-        bot = response.choices[0].message.content.strip()
+        bot_response = response.choices[0].message.content.strip()
+        input_tokens = calculate_tokens(request.request_message, model=MODEL)
+        output_tokens = calculate_tokens(bot_response, model=MODEL)
 
-        # Save chat history to the database
-        save_chat_history(db, session.id, request.request_message, bot)
+        save_chat_history(
+            db, session.id, request.request_message, bot_response, input_tokens, output_tokens, MODEL
+        )
 
-        # Return JSON-serializable response
         return create_response(
             success=True,
-            message="Educational response generated successfully",
+            message="Response generated successfully",
             data={
-                "session_id": str(session.id),  
+                "session_id": str(session.id),
                 "request_message": request.request_message,
-                "response_message": bot,
+                "response_message": bot_response,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
                 "status": "active",
-                "timestamp": datetime.utcnow().isoformat()  
+                "model_used": MODEL,
+                "timestamp": datetime.utcnow().isoformat()
             }
         )
     except Exception as e:
-        return create_response(success=False, message=f"An unexpected error occurred: {str(e)}")
+        return create_response(success=False, message=f"Error: {str(e)}")
 
 
 

@@ -10,7 +10,7 @@ BASE_URL = "http://127.0.0.1:8000"
 
 HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NzA4MTg4NjA0Iiwicm9sZSI6Im5vcm1hbCIsImV4cCI6MTczNjA5ODI2M30.mpHPciTEWu8GQDIi_YzYeP7ljGliHA5u4CAPdPigwIk"
+    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NzA4MTg4NjA0Iiwicm9sZSI6Im5vcm1hbCIsImV4cCI6MTczNjE4Nzk1Mn0.x2qZ-UC0U9M34b_1BKe7FRqipj4Yd088cUhmx6QSKes"
 }
 
 # Endpoints
@@ -89,7 +89,8 @@ for level in seed_data.get("levels", []):
             subject_payload = {
                 "name": subject["title"],
                 "tagline": subject.get("tagline", ""),
-                "image_link": subject.get("image_prompt", ""),
+                "image_link": subject.get("image_link", ""),
+                "image_prompt": subject.get("image_prompt", ""),
                 "class_id": class_id  # Pass the created class ID
             }
             subject_response = post_data(ENDPOINTS["create_subject"], subject_payload)

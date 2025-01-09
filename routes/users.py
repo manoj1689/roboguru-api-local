@@ -60,9 +60,9 @@ def register(request: OTPRequest, db: Session = Depends(get_db)):
 def list_all_users(
     limit: int = Query(10, description="Number of records to retrieve"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(superadmin_only)
+    
 ):
-    superadmin_only(current_user, db)
 
     try:
         user_list = get_all_users(db=db, limit=limit)
@@ -106,7 +106,7 @@ def get_user_profile(
             "name": user.name,
             "mobile_number": user.mobile_number,
             "email": user.email,
-            "date_of_birth": user.date_of_birth,
+            "date_of_birth": user.date_of_birth.isoformat() if user.date_of_birth else None,
             "occupation": user.occupation,
             "is_verified": user.is_verified,
             "education_level": user.education_level,
@@ -125,7 +125,7 @@ def get_user_profile(
         print(f"Error while fetching user profile: {e}")  # Log the full error
         return create_response(
             success=False,
-            message="An unexpected error occurred. Please try again later.",
+            message=f"An unexpected error occurred: {str(e)}",
             data={}
         )
 

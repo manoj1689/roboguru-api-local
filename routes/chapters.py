@@ -6,9 +6,9 @@ import services.chapters
 from sqlalchemy.orm import Session
 from services.auth import get_current_user
 from services.classes import create_response
-from models import Subject
+from models import Subject, User
 from datetime import datetime
-
+from services.dependencies import superadmin_only
 router = APIRouter()
 
 
@@ -16,7 +16,7 @@ router = APIRouter()
 def create_chapter(
     chapter: schemas.ChapterCreate = Body(...),
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user),  
+    current_user: User = Depends(superadmin_only), 
 ):
     try:
         created_chapter = services.chapters.create_chapter_in_db(db=db, chapter=chapter, subject_id=chapter.subject_id)
@@ -90,7 +90,7 @@ def update_chapter(
     chapter_id: str,
     chapter_data: schemas.ChapterUpdate = Body(...),
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user),
+    current_user: User = Depends(superadmin_only), 
 ):
     try:
         db_chapter = services.chapters.get_chapter(db, chapter_id)
@@ -131,7 +131,7 @@ def update_chapter(
 def delete_chapter(
     chapter_id: str,
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user),
+    current_user: User = Depends(superadmin_only), 
 ):
     try:
         db_chapter = services.chapters.get_chapter(db, chapter_id)

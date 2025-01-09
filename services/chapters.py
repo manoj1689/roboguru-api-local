@@ -23,15 +23,32 @@ def get_chapters_by_subject(db: Session, subject_id: int):
     return db.query(Chapter).filter(Chapter.subject_id == subject_id, Chapter.is_deleted == False).all()
 
 def create_chapter_in_db(db: Session, chapter: ChapterCreate, subject_id: int):
-    existing_class = db.query(Subject).filter(Subject.id == subject_id).first()
-    if not existing_class:
-        raise HTTPException(status_code=400, detail="Subject does not exists")  
-        
-    db_chapter = Chapter(name=chapter.name, subject_id=subject_id, tagline=chapter.tagline, image_link=chapter.image_link)
+    existing_subject = db.query(Subject).filter(Subject.id == subject_id).first()
+    if not existing_subject:
+        raise HTTPException(
+            status_code=400,
+            detail="Subject does not exist"
+        )
+    existing_chapter = db.query(Chapter).filter(
+        Chapter.name == chapter.name,
+        Chapter.subject_id == subject_id
+    ).first()
+    if existing_chapter:
+        raise HTTPException(
+            status_code=400,
+            detail="Chapter with this name already exists for the subject"
+        )
+    db_chapter = Chapter(
+        name=chapter.name,
+        subject_id=subject_id,
+        tagline=chapter.tagline,
+        image_link=chapter.image_link
+    )
     db.add(db_chapter)
     db.commit()
     db.refresh(db_chapter)
     return db_chapter
+
 
     
 

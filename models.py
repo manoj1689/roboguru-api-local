@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, DateTime, Boolean, Enum, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, DateTime, Boolean, Enum, Text, Float
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
@@ -38,6 +38,7 @@ class Subject(Base, BaseMixin):
     class_id = Column(String, ForeignKey("classes.id"))
     tagline = Column(String, nullable=True)
     image_link = Column(String, nullable=True)
+    image_prompt = Column(String, nullable=True)
     class_ = relationship("Class", back_populates="subjects")
     chapters = relationship("Chapter", back_populates="subject")
 
@@ -83,6 +84,7 @@ class User(Base, BaseMixin):
     user_class = Column(String, ForeignKey("classes.id")) 
     language = Column(String, nullable=True)  
     profile_image = Column(String, nullable=True) 
+    
 
     type = Column(Enum("superadmin", "admin", "staff", "normal", name="user_type"), default="normal")
 
@@ -98,7 +100,7 @@ class SessionModel(Base, BaseMixin):
     __tablename__ = "sessions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), nullable=False)
+    user_id = Column(String, ForeignKey("users.user_id"), nullable=False)
     status = Column(Enum("active", "completed", "deleted", name="session_status"), default="active")
     started_at = Column(DateTime, default=datetime.utcnow)
     ended_at = Column(DateTime, nullable=True)
@@ -114,6 +116,49 @@ class ChatModel(Base, BaseMixin):
     request_message = Column(Text, nullable=True)
     response_message = Column(Text, nullable=True)
     status = Column(Enum("active", "deleted", name="chat_status"), default="active")
+    input_tokens = Column(Integer, nullable=False, default=0)
+    output_tokens = Column(Integer, nullable=False, default=0)
+    model_used = Column(String, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     session = relationship("SessionModel", back_populates="chats")
+    
+class STTModel(Base):
+    __tablename__ = "stt"
+
+    id = Column(Integer, primary_key=True, index=True)
+    audio_file = Column(Text, nullable=False)  
+    language_code = Column(String, default="en") 
+    audio_text = Column(Text, nullable=True) 
+    audio_time_in_sec = Column(Float, nullable=True) 
+    model_used = Column(String, default="whisper-1")  
+    timestamp = Column(DateTime, default=datetime.utcnow)  
+
+
+class TTSModel(Base):
+    __tablename__ = "tts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    text = Column(Text, nullable=False) 
+    language_code = Column(String, default="en") 
+    audio_file = Column(Text, nullable=True)  
+    characters_used = Column(Integer, nullable=True) 
+    model_used = Column(String, default="gpt-4o-audio-preview")
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+class ImageModel(Base):
+    __tablename__ = "uploaded_images"
+
+    id = Column(Integer, primary_key=True, index=True)
+    image_url = Column(Text, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+class ImagesToTextModel(Base):
+    __tablename__ = "images_to_text"
+
+    id = Column(Integer, primary_key=True, index=True)
+    text_response = Column(Text, nullable=False)
+    model_used = Column(String, default="vision-model-1")
+    token_used = Column(Integer, default=0)
+    language_used = Column(String, default="en")
+    timestamp = Column(DateTime, default=datetime.utcnow)

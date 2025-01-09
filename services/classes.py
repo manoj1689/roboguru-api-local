@@ -20,15 +20,28 @@ def get_all_classes(db: Session, limit: int = 10, name: Optional[str] = None):
 
 
 def create_class_in_db(db: Session, classes: ClassCreate):
-    existing_class = db.query(EducationLevel).filter(EducationLevel.id == classes.level_id).first()
-    if not existing_class:
-        raise HTTPException(status_code=400, detail="Class already exists")
-
+    existing_class = db.query(Class).filter(Class.name == classes.name).first()
+    if existing_class:
+        raise HTTPException(
+            status_code=400,
+            detail="A class with this name already exists"
+        )
+    level = db.query(EducationLevel).filter(EducationLevel.id == classes.level_id).first()
+    if not level:
+        raise HTTPException(
+            status_code=404,
+            detail="Education level does not exist"
+        )
     db_class = Class(name=classes.name, tagline=classes.tagline, level_id=classes.level_id, image_link=classes.image_link)
     db.add(db_class)
     db.commit()
     db.refresh(db_class)
     return db_class
+
+# Get classes by education level ID
+def get_class_by_level(db: Session, level_id: int):
+    return db.query(Class).filter(Class.level_id == level_id, Class.is_deleted == False).all()
+
 
 def create_response(success: bool, message: str, data: dict = None):
     return JSONResponse(
@@ -39,9 +52,4 @@ def create_response(success: bool, message: str, data: dict = None):
             "data": data if data is not None else {}
         }
     )
-
-# Get classes by education level ID
-def get_class_by_level(db: Session, level_id: int):
-    return db.query(Class).filter(Class.level_id == level_id, Class.is_deleted == False).all()
-
 

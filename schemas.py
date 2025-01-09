@@ -70,6 +70,7 @@ class SubjectBase(BaseModel):
     name: str
     tagline: str 
     image_link: str
+    image_prompt: str
 
 class ReadSubjectRequest(BaseModel):
     limit: Optional[int] = 10
@@ -80,12 +81,15 @@ class SubjectCreate(SubjectBase):
     tagline: str 
     class_id : str 
     image_link: str
+    image_prompt: str
 
 class SubjectUpdate(BaseModel):
     name: Optional[str]
     tagline: Optional[str]
     class_id: Optional[str]
     image_link: Optional[str]
+    image_prompt:Optional[str]
+
 
 class SubjectData(SubjectBase):
     id: str
@@ -93,6 +97,7 @@ class SubjectData(SubjectBase):
     tagline: str 
     class_id : str 
     image_link: str
+    image_prompt: str
 
 
 class Subject(SubjectBase):
@@ -258,40 +263,8 @@ class UpdateTrendingTopicRequest(BaseModel):
     priority: int = 0
 
 
-class STTInput(BaseModel):
-    language_code: Optional[str] = Field("en", description="Language code of the audio")
+class TokenRequest(BaseModel):
+    refresh_token: str
 
-class STTOutput(BaseModel):
-    audio_text: str
-    audio_time_in_sec: float
-    model_used: str
-    language_code: str
-    timestamp: datetime
-    additional_data: Optional[dict] = None
-
-class TTSInput(BaseModel):
-    text: str = Field(..., description="Text to convert to speech")
-    language_code: Optional[str] = Field("en", description="Language code for speech synthesis")
-
-class TTSOutput(BaseModel):
-    audio_file: str  # Base64 encoded audio
-    characters_used: int
-    timestamp: datetime
-    language_used: str
-    model_used: str
-    additional_data: Optional[dict] = None
-
-class UploadImageOutput(BaseModel):
-    image_urls: List[str]
-
-class ImagesToTextInput(BaseModel):
-    image_urls: List[str] = Field(..., description="List of Image URLs")
-    prompt: str = Field(..., description="Prompt for image analysis")
-    language_code: Optional[str] = Field("en", description="Language code for the response")
-
-class ImagesToTextOutput(BaseModel):
-    text_response: str
-    model_used: str
-    token_used: int
-    language_used: str
-    additional_data: Optional[dict] = None
+class FirebaseLoginInput(BaseModel):
+    id_token: str

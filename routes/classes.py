@@ -5,16 +5,16 @@ import schemas
 from database import get_db
 from services.classes import get_class_by_level ,create_class_in_db, get_all_classes, get_class, create_response
 from services.auth import get_current_user  
-from models import EducationLevel, Class
+from models import EducationLevel, Class, User
 from datetime import datetime
-
+from services.dependencies import superadmin_only
 router = APIRouter()
 
 @router.post("/create/", response_model=None)
 def create_class(
     classes: schemas.ClassCreate = Body(...),
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user), 
+    current_user: User = Depends(superadmin_only),
 ):
     try:
         created_class = create_class_in_db(db=db, classes=classes)
@@ -136,7 +136,7 @@ def update_class(
     class_id: str,
     class_data: schemas.ClassUpdate,
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user),
+    current_user: User = Depends(superadmin_only), 
 ):
     try:
         # Fetch class by ID
@@ -183,7 +183,7 @@ def update_class(
 def delete_class(
     class_id: str,
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user),
+    current_user: User = Depends(superadmin_only), 
 ):
     try:
         # Fetch class by ID

@@ -7,14 +7,15 @@ import services.topics
 from services.auth import get_current_user 
 from services.classes import create_response
 from datetime import datetime
-
+from models import User
+from services.dependencies import superadmin_only
 router = APIRouter()
 
 @router.post("/create", response_model=None)
 def create_topic(
     topic: schemas.TopicCreate = Body(...),
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user), 
+    current_user: User = Depends(superadmin_only), 
 ):
     try:
         db_topic = services.topics.create_topic(db=db, topic=topic, chapter_id=topic.chapter_id)
@@ -96,7 +97,7 @@ def edit_topic(
     topic_id: str,
     updated_topic: schemas.TopicUpdate = Body(...),
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user),
+    current_user: User = Depends(superadmin_only), 
 ):
     try:
         db_topic = services.topics.get_topic(db=db, topic_id=topic_id)
@@ -140,7 +141,7 @@ def edit_topic(
 def soft_delete_topic(
     topic_id: str,
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user),
+    current_user: User = Depends(superadmin_only), 
 ):
     try:
         db_topic = services.topics.get_topic(db=db, topic_id=topic_id)

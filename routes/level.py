@@ -3,12 +3,12 @@ from sqlalchemy.orm import Session
 from typing import List,Optional
 from database import get_db
 from schemas import EducationLevelCreate, ReadEducationLevelRequest, EducationLevelUpdate
-from models import EducationLevel
+from models import EducationLevel, User
 from services.level import get_all_education_levels, create_education_level, get_all_education_levels, get_education_level
 from services.auth import get_current_user  
 from services.classes import create_response
 from datetime import datetime
-
+from services.dependencies import superadmin_only
 
 router = APIRouter()
 
@@ -16,7 +16,7 @@ router = APIRouter()
 def create_level(
     level: EducationLevelCreate = Body(...),
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user),
+    current_user: User = Depends(superadmin_only),
 ):
     try:
         created_level = create_education_level(db=db, level=level)
@@ -65,7 +65,7 @@ def read_levels_list(
 
 @router.get("/{level_id}", response_model=None)
 def read_level_id(
-    level_id: int = 1000,
+    level_id: str,
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user),  
 ):
@@ -114,7 +114,7 @@ def update_level(
     level_id: str,
     level: EducationLevelUpdate = Body(...),
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user),
+    current_user: User = Depends(superadmin_only), 
 ):
     try:
         db_level = db.query(EducationLevel).filter(
@@ -148,7 +148,7 @@ def delete_level(
     level_id: str,
     # delete_request: EducationLevelDeleteRequest = Body(...),
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user),
+    current_user: User = Depends(superadmin_only), 
 ):
     try:
         db_level = db.query(EducationLevel).filter(

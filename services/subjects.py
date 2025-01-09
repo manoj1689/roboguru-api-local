@@ -25,13 +25,31 @@ def get_all_subjects(db: Session, limit: int = 10, name: Optional[str] = None):
         query = query.filter(Subject.name.ilike(f"%{name}%"))
     return query.limit(limit).all()
 
-# Create a new subject in the database
 def create_subject(db: Session, subject: SubjectCreate):
     existing_class = db.query(Class).filter(Class.id == subject.class_id).first()
     if not existing_class:
-        raise HTTPException(status_code=400, detail="Class does not exists")  
-    
-    db_subject = Subject(name=subject.name, class_id=subject.class_id, tagline=subject.tagline, image_link=subject.image_link)
+        raise HTTPException(
+            status_code=400,
+            detail="Class does not exist"
+        )
+    existing_subject = db.query(Subject).filter(
+        Subject.name == subject.name,
+        Subject.class_id == subject.class_id
+    ).first()
+    if existing_subject:
+        raise HTTPException(
+            status_code=400,
+            detail="Subject with this name already exists in the class"
+        )
+
+    # Create the new subject
+    db_subject = Subject(
+        name=subject.name,
+        class_id=subject.class_id,
+        tagline=subject.tagline,
+        image_link=subject.image_link,
+        image_prompt=subject.image_prompt
+    )
     db.add(db_subject)
     db.commit()
     db.refresh(db_subject)

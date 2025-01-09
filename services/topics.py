@@ -25,17 +25,34 @@ def get_all_topics(db: Session, limit: int = 10, name: Optional[str] = None):
 
 
 def create_topic(db: Session, topic: TopicCreate, chapter_id: int):
-    db_topic = Topic(name=topic.name,  details=topic.details, chapter_id=chapter_id, tagline=topic.tagline, image_link=topic.image_link, subtopics=topic.subtopics)
-
-    # Check for duplicate class name
-    existing_class = db.query(Chapter).filter(Chapter.id == chapter_id).first()
-    if not existing_class:
-        raise HTTPException(status_code=400, detail="Chapter does not exists")  
-    
+    existing_chapter = db.query(Chapter).filter(Chapter.id == chapter_id).first()
+    if not existing_chapter:
+        raise HTTPException(
+            status_code=400,
+            detail="Chapter does not exist"
+        )
+    existing_topic = db.query(Topic).filter(
+        Topic.name == topic.name,
+        Topic.chapter_id == chapter_id
+    ).first()
+    if existing_topic:
+        raise HTTPException(
+            status_code=400,
+            detail="Topic with this name already exists in the chapter"
+        )
+    db_topic = Topic(
+        name=topic.name,
+        details=topic.details,
+        chapter_id=chapter_id,
+        tagline=topic.tagline,
+        image_link=topic.image_link,
+        subtopics=topic.subtopics
+    )
     db.add(db_topic)
     db.commit()
     db.refresh(db_topic)
     return db_topic
+
 
 
 # def get_topics(db: Session, skip: int = 0, limit: int = 10):

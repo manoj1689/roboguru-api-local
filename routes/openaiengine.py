@@ -3,20 +3,22 @@ import uuid
 import base64
 import datetime
 from typing import List, Optional
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Header
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Header, Form
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-
-
+from models import STTModel, ImageModel, ImagesToTextModel, TTSModel
+from sqlalchemy.orm import Session
+from database import get_db
+from services.auth import get_current_user 
+from services.classes import create_response
 from dotenv import load_dotenv
 import base64
+
 
 import openai
 
 load_dotenv()
 
-
-from fastapi import APIRouter, Depends, HTTPException, status
 router = APIRouter()
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -27,20 +29,19 @@ if not openai.api_key:
 UPLOAD_DIR = "uploaded_images"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Mount static files for serving uploaded images
 router.mount("/uploaded_images", StaticFiles(directory=UPLOAD_DIR), name="uploaded_images")
 
-# Retrieve API keys from environment variable and split into a set
-API_KEYS_ENV = os.getenv("API_KEYS")
-if not API_KEYS_ENV:
-    raise ValueError("API keys not found. Please set the API_KEYS environment variable.")
+# # Retrieve API keys from environment variable and split into a set
+# API_KEYS_ENV = os.getenv("API_KEYS")
+# if not API_KEYS_ENV:
+#     raise ValueError("API keys not found. Please set the API_KEYS environment variable.")
 
-API_KEYS = set(API_KEYS_ENV.split(","))
+# API_KEYS = set(API_KEYS_ENV.split(","))
 
-def get_api_key(x_api_key: Optional[str] = Header(None)):
-    if x_api_key not in API_KEYS:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    return x_api_key
+# def get_api_key(x_api_key: Optional[str] = Header(None)):
+#     if x_api_key not in API_KEYS:
+#         raise HTTPException(status_code=401, detail="Unauthorized")
+#     return x_api_key
 
 from pydantic import BaseModel, Field
 
@@ -96,128 +97,305 @@ def calculate_audio_duration(audio_bytes: bytes, sample_rate: int = 16000) -> fl
     return len(audio_bytes) / (sample_rate * 2)  # Assuming 16-bit audio
 
 @router.post("/speech-to-text/", response_model=STTOutput)
-def speech_to_text_endpoint(stt_input: STTInput, api_key: str = Depends(get_api_key)):
-    audio_bytes = decode_base64(stt_input.audio_file)
-    audio_time_in_sec = calculate_audio_duration(audio_bytes)
-    temp_audio_path = f"temp_{uuid.uuid4()}.wav"
-    with open(temp_audio_path, "wb") as f:
-        f.write(audio_bytes)
+def speech_to_text_endpoint(
+    stt_input: STTInput,
+    db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user),
+):
     try:
+        # Decode Base64 audio data
+        audio_bytes = decode_base64(stt_input.audio_file)
+        audio_time_in_sec = calculate_audio_duration(audio_bytes)
+
+        # Create a temporary file path for the audio
+        temp_audio_path = f"{UPLOAD_DIR}/temp_{uuid.uuid4()}.wav"
+        with open(temp_audio_path, "wb") as f:
+            f.write(audio_bytes)
+
         with open(temp_audio_path, "rb") as audio_file:
-            # response = openai.audio.transcribe("whisper-1", audio_file, language=stt_input.language_code)
+            # Make API request to OpenAI
             response = openai.audio.transcriptions.create(
                 model="whisper-1", 
                 file=audio_file
             )
 
-    except Exception as e:
         os.remove(temp_audio_path)
-        raise HTTPException(status_code=500, detail=f"OpenAI API Error: {str(e)}")
-    os.remove(temp_audio_path)
-    audio_text = response.text
-    print("audio_text",audio_text)
-    model_used =  "whisper-1" #response.get("model", "whisper-1")
-    language_code = "en" #response.get("language", stt_input.language_code)
-    return STTOutput(
-        audio_text=audio_text,
-        audio_time_in_sec=audio_time_in_sec,
-        model_used=model_used,
-        language_code=language_code,
-        timestamp=datetime.datetime.utcnow(),
-        additional_data={}
-    )
+
+        # Save transcription data to the database
+        stt_output = STTModel(
+            audio_file=temp_audio_path,  
+            language_code=stt_input.language_code,
+            audio_text=response.text,
+            audio_time_in_sec=audio_time_in_sec,
+            model_used="whisper-1",
+            timestamp=datetime.datetime.utcnow()
+        )
+        db.add(stt_output)
+        db.commit()
+        db.refresh(stt_output)
+
+        return create_response(
+            success=True,
+            message="Speech-to-text conversion successful",
+            data={
+                "audio_text": stt_output.audio_text,
+                "audio_time_in_sec": stt_output.audio_time_in_sec,
+                "model_used": stt_output.model_used,
+                "language_code": stt_output.language_code,
+                "timestamp": stt_output.timestamp.isoformat(),
+            }
+        )
+    except Exception as e:
+        return create_response(
+            success=False,
+            message=f"Speech-to-text conversion failed: {str(e)}"
+        )
+
+
+
+# Define the new folder for storing TTS audio files
+TTS_UPLOAD_DIR = "tts_uploaded_audio"
+os.makedirs(TTS_UPLOAD_DIR, exist_ok=True)
 
 @router.post("/text-to-speech/", response_model=TTSOutput)
-def text_to_speech_endpoint(tts_input: TTSInput, api_key: str = Depends(get_api_key)):
-    characters_used = len(tts_input.text)
+def text_to_speech_endpoint(
+    tts_input: TTSInput,
+    current_user: str = Depends(get_current_user),  
+    db: Session = Depends(get_db)
+):
     try:
-
-        # Create a chat completion with audio modality
-        # completion = openai.chat.completions.create(
-        #     model="gpt-4o-audio-preview",
-        #     modalities=["text", "audio"],
-        #     audio={"voice": "alloy", "format": "wav"},
-        #     messages=[
-        #         {
-        #             "role": "user",
-        #             "content": tts_input.text
-        #         }
-        #     ]
-        # )
-
+        # Call OpenAI TTS API
         response = openai.audio.speech.create(
             model="tts-1",
             voice="nova",
             input=tts_input.text
         )
+        # Combine the response into a single byte stream
         audio_content = b''.join(response.iter_bytes())
+
+        # Save the audio content to a file in the new folder
+        unique_filename = f"tts_{uuid.uuid4()}.wav"
+        temp_audio_path = os.path.join(TTS_UPLOAD_DIR, unique_filename)
+        with open(temp_audio_path, "wb") as f:
+            f.write(audio_content)
+
+        # Encode audio content to Base64
+        audio_base64 = encode_base64(audio_content)
+
+        # Save the file path and other details in the database
+        tts_record = TTSModel(
+            text=tts_input.text,
+            language_code=tts_input.language_code,
+            audio_file=temp_audio_path,  # Save the file path
+            characters_used=len(tts_input.text),
+            model_used="tts-1",
+            timestamp=datetime.datetime.utcnow()
+        )
+        db.add(tts_record)
+        db.commit()
+        db.refresh(tts_record)
+
+        return create_response(
+            success=True,
+            message="Text-to-speech conversion successful",
+            data={
+                "file_url": f"/uploaded_audio/{unique_filename}",  # URL for accessing the file
+                "characters_used": len(tts_input.text),
+                "timestamp": tts_record.timestamp.isoformat(),
+                "language_used": tts_record.language_code,
+                "model_used": tts_record.model_used,
+            }
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"OpenAI API Error: {str(e)}")
-
-    # Extract the audio data from the response
-    # try:
-    #     audio_data_base64 = completion.choices[0].message.audio.data
-    # except AttributeError:
-    #     raise HTTPException(status_code=500, detail="Audio data not found in OpenAI response.")
-    # except IndexError:
-    #     raise HTTPException(status_code=500, detail="No choices returned in OpenAI response.")
-
-    # Decode the Base64 audio data
-    # try:
-    #     audio_bytes = base64.b64decode(audio_content)
-    # except Exception:
-    #     raise HTTPException(status_code=500, detail="Failed to decode audio data.")
-
-    # Optionally, save the audio to a file (e.g., for logging or debugging)
-    # with open("output.wav", "wb") as f:
-    #     f.write(audio_bytes)
-
-    # Re-encode to Base64 for the response
-    audio_base64 = encode_base64(audio_content)
-
-    return TTSOutput(
-        audio_file=audio_base64,
-        characters_used=characters_used,
-        timestamp=datetime.datetime.utcnow(),
-        language_used=tts_input.language_code,
-        model_used="gpt-4o-audio-preview",
-        additional_data={}
-    )
+        return create_response(
+            success=False,
+            message=f"Text-to-speech conversion failed: {str(e)}"
+        )
 
 
 @router.post("/upload-image/", response_model=UploadImageOutput)
-def upload_image_endpoint(files: List[UploadFile] = File(...), x_api_key: Optional[str] = Header(None)):
-    if x_api_key not in API_KEYS:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+def upload_image_endpoint(
+    files: List[UploadFile] = File(...),
+    current_user: str = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     image_urls = []
     for file in files:
+        # Validate file type
         if file.content_type not in ["image/png", "image/jpeg", "image/jpg", "image/gif"]:
             raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
+
+        # Generate unique file name
         file_extension = os.path.splitext(file.filename)[1]
         unique_filename = f"{uuid.uuid4()}{file_extension}"
         file_path = os.path.join(UPLOAD_DIR, unique_filename)
-        with open(file_path, "wb") as f:
-            f.write(file.file.read())
+
+        # Write file to disk
+        try:
+            with open(file_path, "wb") as f:
+                f.write(file.file.read())
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+
+        # Generate accessible URL
         image_url = f"/uploaded_images/{unique_filename}"
-        image_urls.routerend(image_url)
+        image_urls.append(image_url)
+
+        # Save image URL to DB
+        image_entry = ImageModel(image_url=image_url)
+        db.add(image_entry)
+        db.commit()
+
     return UploadImageOutput(image_urls=image_urls)
 
+
+# @router.post("/images-to-text/", response_model=ImagesToTextOutput)
+# def images_to_text_endpoint(
+#     images_input: ImagesToTextInput,
+#     current_user: str = Depends(get_current_user),
+#     db: Session = Depends(get_db),
+# ):
+#     try:
+#         messages = [
+#             {
+#                 "role": "user",
+#                 "content": [
+#                     {
+#                         "type": "text",
+#                         "text": images_input.prompt,
+#                     }
+#                 ],
+#             }
+#         ]
+
+#         # Add the image URLs to the messages
+#         for image_url in images_input.image_urls:
+#             messages[0]["content"].append(
+#                 {
+#                     "type": "image_url",
+#                     "image_url": {"url": image_url},
+#                 }
+#             )
+
+#         # Save image URLs to the database
+#         for image_url in images_input.image_urls:
+#             new_image = ImageModel(image_url=image_url)
+#             db.add(new_image)
+#         db.commit()
+
+#         # Call the OpenAI API
+#         response = openai.chat.completions.create(
+#             model="gpt-4o-mini",  
+#             messages=messages,
+#             max_tokens=300,
+#         )
+
+#         # Extract and format the response
+#         response_content = response.choices[0].message.content.strip()
+#         tokens_used = response.usage.total_tokens
+
+#         # Save the text response to the database
+#         new_response = ImagesToTextModel(
+#             text_response=response_content,
+#             model_used="gpt-4o-mini",
+#             token_used=tokens_used,
+#             language_used=images_input.language_code,
+#         )
+#         db.add(new_response)
+#         db.commit()
+
+#         return create_response(
+#             success=True,
+#             message="Image-to-text conversion successful",
+#             data={
+#                 "text_response":response_content,
+#                 "model_used":"gpt-4o-mini",
+#                 "token_used":tokens_used,
+#                 "language_used":images_input.language_code,
+#                 "additional_data":{},
+#             }
+#         )
+
+#     except Exception as e:
+#         return create_response(
+#             success=False,
+#             message=f"Image-to-text conversion failed: {str(e)}"
+#         )
+
 @router.post("/images-to-text/", response_model=ImagesToTextOutput)
-def images_to_text_endpoint(images_input: ImagesToTextInput, api_key: str = Depends(get_api_key)):
+def images_to_text_endpoint(
+    images_input: ImagesToTextInput,
+    current_user: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     try:
-        response = openai.images.generate(prompt=images_input.prompt,
-        images=images_input.image_urls,
-        model="vision-model-1")
+        # Ensure image URLs have valid formats
+        for image_url in images_input.image_urls:
+            if not (image_url.lower().endswith((".png", ".jpeg", ".jpg", ".gif", ".webp"))):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported image format for URL: {image_url}. Supported formats: png, jpeg, jpg, gif, webp.",
+                )
+
+        # Prepare the request payload for OpenAI API
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": images_input.prompt,
+                    }
+                ],
+            }
+        ]
+
+        # Add the image URLs to the messages
+        for image_url in images_input.image_urls:
+            messages[0]["content"].append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": image_url},
+                }
+            )
+
+        # Call the OpenAI API
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            max_tokens=300,
+        )
+
+        # Extract and format the response
+        response_content = response.choices[0].message.content.strip()
+        tokens_used = response.usage.total_tokens
+
+        # Save the text response to the database
+        new_response = ImagesToTextModel(
+            text_response=response_content,
+            model_used="gpt-4o-mini",
+            token_used=tokens_used,
+            language_used=images_input.language_code,
+        )
+        db.add(new_response)
+        db.commit()
+
+        return create_response(
+            success=True,
+            message="Image-to-text conversion successful",
+            data={
+                "text_response": response_content,
+                "model_used": "gpt-4o-mini",
+                "token_used": tokens_used,
+                "language_used": images_input.language_code,
+                "additional_data": {},
+            }
+        )
+
+    except HTTPException as e:
+        raise e  # Re-raise specific HTTPExceptions for proper client feedback
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"OpenAI API Error: {str(e)}")
-    text_response = response.get("text", "")
-    model_used = response.get("model", "vision-model-1")
-    token_used = response.get("usage", {}).get("total_tokens", 0)
-    language_used = images_input.language_code
-    return ImagesToTextOutput(
-        text_response=text_response,
-        model_used=model_used,
-        token_used=token_used,
-        language_used=language_used,
-        additional_data={}
-    )
+        return create_response(
+            success=False,
+            message=f"Image-to-text conversion failed: {str(e)}",
+        )

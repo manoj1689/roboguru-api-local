@@ -7,14 +7,15 @@ import services.subjects
 from services.auth import get_current_user 
 from typing import List, Optional
 from services.classes import create_response
-from models import Class
+from models import Class, User
+from services.dependencies import superadmin_only
 router = APIRouter()
 
 @router.post("/create", response_model=None)
 def create_subject(
     subject: schemas.SubjectCreate = Body(...),
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user), 
+    current_user: User = Depends(superadmin_only),
 ):
     try:   
         created_subject = services.subjects.create_subject(db=db, subject=subject)
@@ -24,7 +25,8 @@ def create_subject(
             "name": created_subject.name,
             "class_id":created_subject.class_id,
             "tagline": created_subject.tagline,
-            "image_link": created_subject.image_link
+            "image_link": created_subject.image_link,
+            "image_prompt": created_subject.image_prompt
         }
         return create_response(success=True, message="Subject created successfully", data=response_data)
     except HTTPException as e:
@@ -55,7 +57,8 @@ def read_all_subjects(
                 "name": sub.name,
                 "class_id": sub.class_id,
                 "tagline": sub.tagline,
-                "image_link": sub.image_link
+                "image_link": sub.image_link,
+                "image_prompt": sub.image_prompt
             }
             for sub in subjects_list
         ]
@@ -83,7 +86,8 @@ async def get_subjects_by_class(
                 "name": sub.name,
                 "class_id":sub.class_id,
                 "tagline": sub.tagline,
-                "image_link": sub.image_link
+                "image_link": sub.image_link,
+                "image_prompt": sub.image_prompt
             }
             for sub in subjects
         ]
@@ -97,7 +101,7 @@ def update_subject(
     subject_id: str,
     subject_data: schemas.SubjectUpdate = Body(...),
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user),
+    current_user: User = Depends(superadmin_only), 
 ):
     try:
         db_subject = services.subjects.get_subject_by_id(db, subject_id)
@@ -115,6 +119,7 @@ def update_subject(
         db_subject.name = subject_data.name or db_subject.name
         db_subject.tagline = subject_data.tagline or db_subject.tagline
         db_subject.image_link = subject_data.image_link or db_subject.image_link
+        db_subject.image_prompt = subject_data.image_prompt or db_subject.image_prompt
         db_subject.class_id = subject_data.class_id or db_subject.class_id
 
         db.add(db_subject)
@@ -127,6 +132,8 @@ def update_subject(
             "class_id": db_subject.class_id,
             "tagline": db_subject.tagline,
             "image_link": db_subject.image_link,
+            "image_prompt": db_subject.image_prompt,
+
         }
 
         return create_response(success=True, message="Subject updated successfully", data=response_data)
@@ -139,7 +146,7 @@ def update_subject(
 def delete_subject(
     subject_id: str,
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user),
+    current_user: User = Depends(superadmin_only), 
 ):
     try:
         db_subject = services.subjects.get_subject_by_id(db, subject_id)
