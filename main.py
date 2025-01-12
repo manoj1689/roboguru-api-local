@@ -4,6 +4,8 @@ from database import engine, get_db
 import models
 from routes import firebase, classes, subjects, chapters, topics, login, chat, level, users, trending, openaiengine
 from services.users import create_superadmin
+from exception_handlers import custom_http_exception_handler
+from fastapi.exceptions import HTTPException
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -17,7 +19,7 @@ app.add_middleware(
     allow_methods=["*"],  
     allow_headers=["*"],  
 )
-
+app.add_exception_handler(HTTPException, custom_http_exception_handler)
 app.include_router(login.router, tags=["login"])
 app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(level.router, prefix="/level", tags=["level"])

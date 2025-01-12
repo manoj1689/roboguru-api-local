@@ -84,8 +84,7 @@ def list_all_users(
     except Exception as e:
         return create_response(success=False, message=f"An unexpected error occurred: {str(e)}")
 
-
-@router.get("/profile", response_model=UserProfileResponse)
+@router.get("/profile", response_model=None)
 def get_user_profile(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)  # Validated user
@@ -95,13 +94,10 @@ def get_user_profile(
         user = db.query(User).filter(User.mobile_number == current_user.mobile_number).first()
 
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
+            return create_response(success=False, message="User not found")
 
-        # Prepare the profile response
-        profile_data = {
+        # Prepare the response data
+        response_data = {
             "id": user.user_id,
             "name": user.name,
             "mobile_number": user.mobile_number,
@@ -112,22 +108,20 @@ def get_user_profile(
             "education_level": user.education_level,
             "user_class": user.user_class,
             "language": user.language,
+            "profile_image": user.profile_image,
         }
 
         return create_response(
             success=True,
             message="User profile retrieved successfully",
-            data=profile_data
+            data=response_data
         )
-    except HTTPException as http_err:
-        raise http_err
     except Exception as e:
-        print(f"Error while fetching user profile: {e}")  # Log the full error
         return create_response(
             success=False,
-            message=f"An unexpected error occurred: {str(e)}",
-            data={}
+            message="An unexpected error occurred"
         )
+
 
 @router.put("/profile/update", response_model=None)
 def update_user_profile(

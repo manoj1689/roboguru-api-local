@@ -268,3 +268,14 @@ class TokenRequest(BaseModel):
 
 class FirebaseLoginInput(BaseModel):
     id_token: str
+
+# class NotificationRequest(BaseModel):
+#     uid: str  # UID of the user
+#     operation: str  # Operation type (e.g., SUSPENDUSER, UPDATE_CARD_METADATA)
+
+
+class NotificationRequest(BaseModel):
+    uid: str  # UID of the user
+    topic: str  # Topic for grouping notifications
+    title: str  # Notification title
+    body: str  # Notification body

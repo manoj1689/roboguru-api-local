@@ -43,9 +43,9 @@ def get_class_by_level(db: Session, level_id: int):
     return db.query(Class).filter(Class.level_id == level_id, Class.is_deleted == False).all()
 
 
-def create_response(success: bool, message: str, data: dict = None):
+def create_response(success: bool, message: str, data: dict = None, status_code: int = None):
     return JSONResponse(
-        status_code=200 if success else 400,
+        status_code=status_code if status_code is not None else (200 if success else 400),
         content={
             "success": success,
             "message": message,
