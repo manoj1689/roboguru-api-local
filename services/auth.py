@@ -29,17 +29,30 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
         mobile_number = payload.get("sub")
         
         if not mobile_number:
-            return create_response(success=False, message="Invalid token or token expired.")
-        
-        print(f"Searching for user with mobile_number: {mobile_number}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token or token expired.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         
         # Query user in the database
         user = db.query(User).filter(User.mobile_number == mobile_number).first()
         if not user:
-            return create_response(success=False, message="User not found.")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found.",
+            )
         
         return user
     except ExpiredSignatureError:
-        return create_response(success=False, message="Token has expired.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     except JWTError:
-        return create_response(success=False, message="Invalid token.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )

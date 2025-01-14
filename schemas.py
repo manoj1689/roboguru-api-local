@@ -167,6 +167,13 @@ class ChatRequest(BaseModel):
     session_id: str
     request_message: str
 
+class ChatTopicBasedRequest(BaseModel):
+    subject_name: str
+    class_name: str
+    chapter_name: str
+    topic_name: str
+    subtopic_name: Optional[str] = None
+    request_message: str
 
 class ChatBase(BaseModel):
     session_id: uuid.UUID
@@ -188,6 +195,10 @@ class ChatResponse(ChatBase):
 class SessionBase(BaseModel):
     pass
 
+class SessionCreateResponse(BaseModel):
+    session_id: str
+    status: str
+    started_at: datetime
 
 class SessionResponse(SessionBase):
     id: uuid.UUID

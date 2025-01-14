@@ -60,7 +60,7 @@ def read_all_chapters(
     except Exception as e:
         return create_response(success=False, message=f"An unexpected error occurred: {e}")
 
-@router.get("/subject/{subject_id}", response_model=None)
+@router.get("/chapter/{subject_id}", response_model=None)
 async def get_chapters_by_subject(
     subject_id: str,
     db: Session = Depends(get_db),

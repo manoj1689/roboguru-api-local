@@ -6,6 +6,8 @@ from database import get_db
 from schemas import UpdateTrendingTopicRequest
 from services.dependencies import superadmin_only
 from services.classes import create_response
+from services.auth import get_current_user 
+
 router = APIRouter()
 
 @router.post("/trending_topics/update")
@@ -44,7 +46,7 @@ def update_trending_topic(
 def get_trending_topics_by_class(
     class_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(superadmin_only), 
+    current_user: str = Depends(get_current_user),  
 ):
     try:
         trending_topics = (

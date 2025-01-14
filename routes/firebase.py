@@ -56,21 +56,29 @@ async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db
                 success=False,
                 message="Required fields missing: UID or identifier (email/phone).",
             )
-
-        # Step 3: Check if the user exists and save/update
+        # Step 3: Check if the user exists by user_id, mobile_number, or email
         user = db.query(User).filter(
-            (User.mobile_number == phone_number) | (User.email == email)
+            (User.user_id == uid) | 
+            (User.mobile_number == phone_number) | 
+            (User.email == email)
         ).first()
 
         if user:
-            # Update existing user
-            user.updated_at = datetime.utcnow()
-            user.is_verified = True
+            # Check if the user_id matches the existing user's user_id
+            if user.user_id != uid:
+                return create_response(
+                    success=False,
+                    message=f"Conflict: The provided user_id '{uid}' conflicts with an existing user."
+                )
+
+            # Update the existing user's details
+            user.email = email if email else user.email
+            user.mobile_number = phone_number if phone_number else user.mobile_number
             user.user_identifier = identifier
-            if not user.type:
-                user.type = role
+            user.type = role
+            user.updated_at = datetime.utcnow()
         else:
-            # Create new user
+            # Create new user if none exists
             user = User(
                 user_id=uid,
                 email=email if email else None,
@@ -83,8 +91,12 @@ async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db
             )
             db.add(user)
 
-        # Commit the changes to the database
-        db.commit()
+        # Commit the transaction
+        try:
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            return create_response(success=False, message=f"Database error: {str(e)}")
 
         # Step 4: Generate JWT tokens
         jwt_access_token = create_access_token(data={"sub": identifier}, expires_delta=timedelta(hours=2))
