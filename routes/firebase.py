@@ -14,10 +14,14 @@ from services.classes import create_response
 from schemas import NotificationRequest
 from google.oauth2 import id_token
 from google.auth.transport import requests
+import psycopg2
+
 router = APIRouter()
 
 # Initialize Firebase
 initialize_firebase()
+
+
 @router.post("/firebase-login")
 async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db)):
     id_token_str = input.id_token
@@ -26,18 +30,16 @@ async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db
         return create_response(success=False, message="ID Token is required.")
 
     try:
+        # Step 1: Verify ID Token
         decoded_token = None
         try:
             decoded_token = auth.verify_id_token(id_token_str)
-            print("Decoded Token (auth.verify_id_token):", decoded_token)
         except exceptions.FirebaseError:
-            # Fallback to other verification method if the first fails
             decoded_token = id_token.verify_oauth2_token(
                 id_token_str,
                 requests.Request(),
                 audience="709622863624-2itnt673s7u60inf39tsr37tgud8v653.apps.googleusercontent.com",
             )
-            print("Decoded Token (id_token.verify_oauth2_token):", decoded_token)
 
         if not decoded_token:
             return create_response(success=False, message="Token verification failed.")
@@ -49,6 +51,8 @@ async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db
         role = decoded_token.get("role", "normal")  # Default role
         identifier = phone_number or email
 
+        # Log extracted information
+        print(f"Decoded Token: {decoded_token}")
         print(f"UID: {uid}, Email: {email}, Phone Number: {phone_number}, Role: {role}")
 
         if not uid or not identifier:
@@ -56,29 +60,19 @@ async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db
                 success=False,
                 message="Required fields missing: UID or identifier (email/phone).",
             )
-        # Step 3: Check if the user exists by user_id, mobile_number, or email
+
+        # Step 3: Check user existence
         user = db.query(User).filter(
-            (User.user_id == uid) | 
-            (User.mobile_number == phone_number) | 
-            (User.email == email)
+            (User.user_id == uid) | (User.user_identifier == identifier)
         ).first()
 
         if user:
-            # Check if the user_id matches the existing user's user_id
-            if user.user_id != uid:
-                return create_response(
-                    success=False,
-                    message=f"Conflict: The provided user_id '{uid}' conflicts with an existing user."
-                )
-
-            # Update the existing user's details
+            # Update existing user
             user.email = email if email else user.email
             user.mobile_number = phone_number if phone_number else user.mobile_number
-            user.user_identifier = identifier
-            user.type = role
             user.updated_at = datetime.utcnow()
         else:
-            # Create new user if none exists
+            # Create new user
             user = User(
                 user_id=uid,
                 email=email if email else None,
@@ -91,26 +85,30 @@ async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db
             )
             db.add(user)
 
-        # Commit the transaction
+        # Commit changes
         try:
             db.commit()
         except Exception as e:
             db.rollback()
-            return create_response(success=False, message=f"Database error: {str(e)}")
+            if isinstance(e.orig, psycopg2.errors.UniqueViolation):
+                user = db.query(User).filter(User.user_identifier == identifier).first()
+            else:
+                return create_response(success=False, message=f"Database error: {str(e)}")
 
-        # Step 4: Generate JWT tokens
+        # Step 4: Generate tokens
         jwt_access_token = create_access_token(data={"sub": identifier}, expires_delta=timedelta(hours=2))
         jwt_refresh_token = create_refresh_token(data={"sub": identifier})
 
+        # Step 5: Return response
         return create_response(
             success=True,
             message="Login successful.",
             data={
-                "uid": uid,
-                "email": email,
-                "phone_number": phone_number,
-                "user_identifier": identifier,
-                "type": role,
+                "uid": user.user_id,
+                "email": user.email,
+                "phone_number": user.mobile_number,
+                "user_identifier": user.user_identifier,
+                "type": user.type,
                 "access_token": jwt_access_token,
                 "refresh_token": jwt_refresh_token,
                 "token_type": "bearer",
@@ -122,72 +120,6 @@ async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db
 
     except Exception as e:
         return create_response(success=False, message=f"Unexpected error: {str(e)}")
-
-# @router.post("/firebase-login")
-# async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db)):
-#     id_token = input.id_token  
-
-#     if not id_token:
-#         return create_response(
-#             success=False,
-#             message="ID Token is required."
-#         )
-#     try:
-        # # Verify the Firebase ID token
-        # decoded_token = auth.verify_id_token(id_token)
-        # uid = decoded_token.get("uid")
-        # phone_number = decoded_token.get("phone_number")
-
-        # if not phone_number:
-        #     return create_response(
-        #         success=True,
-        #         message="Phone number not available in token."
-        #     )
-
-#         # Check if user exists in the database
-#         user = db.query(User).filter(User.mobile_number == phone_number).first()
-
-#         if user:
-#             # Update existing user details
-#             user.updated_at = datetime.datetime.utcnow()
-#             user.is_verified = True
-#         else:
-#             # Create new user record
-#             user = User(
-#                 user_id=uid,
-#                 mobile_number=phone_number,
-#                 is_verified=True,
-#             )
-#             db.add(user)
-
-#         db.commit()
-
-#         # Generate the access and refresh tokens
-#         access_token_expires = timedelta(hours=2) 
-#         jwt_access_token = create_access_token(
-#             data={"sub": phone_number}, expires_delta=access_token_expires
-#         )
-#         jwt_refresh_token = create_refresh_token(
-#             data={"sub": phone_number}
-#         )  
-
-#         return create_response(
-#             success=True,
-#             message="Login successful.",
-#             data={
-#                 "uid": uid,
-#                 "phone_number": phone_number,
-#                 "access_token": jwt_access_token,
-#                 "refresh_token": jwt_refresh_token,
-#                 "token_type": "bearer"
-#             }
-#         )
-
-#     except Exception as e:
-#         return create_response(
-#             success=False,
-#             message=f"Invalid ID Token: {str(e)}"
-#         )
 
 
 @router.post("/send-user-notification/")

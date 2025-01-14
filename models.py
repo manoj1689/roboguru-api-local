@@ -105,6 +105,9 @@ class SessionModel(Base, BaseMixin):
     status = Column(Enum("active", "completed", "deleted", name="session_status"), default="active")
     started_at = Column(DateTime, default=datetime.utcnow)
     ended_at = Column(DateTime, nullable=True)
+    title = Column(String, nullable=True)  
+    last_message = Column(String, nullable=True)  
+    last_message_time = Column(DateTime, nullable=True)  
 
     chats = relationship("ChatModel", back_populates="session")
 

@@ -21,12 +21,11 @@ def create_refresh_token(data: dict, expires_delta: timedelta = None):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
+
 def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     try:
-        # Decode the token
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        print(f"Decoded payload: {payload}")
-        mobile_number = payload.get("sub")
+        mobile_number = payload.get("sub") or payload.get("email")
         
         if not mobile_number:
             raise HTTPException(
@@ -35,8 +34,9 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
-        # Query user in the database
-        user = db.query(User).filter(User.mobile_number == mobile_number).first()
+        user = db.query(User).filter(
+            (User.mobile_number == mobile_number) | (User.email == mobile_number)
+        ).first()
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

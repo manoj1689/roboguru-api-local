@@ -1,5 +1,5 @@
 from fastapi import FastAPI,Form, HTTPException, APIRouter, Depends, File, UploadFile
-from schemas import ChatResponse, SessionResponse, SessionBase, SessionCreateResponse, ChatBase, ChatRequest, ChatTopicBasedRequest
+from schemas import ChatResponse, SessionOneResponse, SessionResponse, SessionBase, SessionCreateResponse, ChatBase, ChatRequest, ChatTopicBasedRequest, SessionListResponse
 from services.chat import get_all_sessions, convert_chat_history_to_dict, truncate_chat_history, summarize_history, calculate_tokens, save_chat_history
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
@@ -123,21 +123,14 @@ async def education_chat(
 
 @router.post("/sessions/start", response_model=SessionCreateResponse)
 async def start_session(
-    current_user: User = Depends(get_current_user),  # Ensure this gets the current user
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Starts a new session for the user when they access the chat window.
+    If an active session exists, it is ended before starting a new session.
     """
     user_id = current_user.user_id  # Get the user_id from the current_user object
-
-    # Check if the user exists in the "users" table (we already have this check from get_current_user)
-    if not current_user:
-        return create_response(
-            success=False,
-            message="User not found.",
-            data=None
-        )
 
     # Check if the user already has an active session
     existing_session = db.query(SessionModel).filter(
@@ -145,19 +138,19 @@ async def start_session(
     ).first()
 
     if existing_session:
-        return create_response(
-            success=False,
-            message="You already have an active session.",
-            data={"session_id": str(existing_session.id), "status": existing_session.status}
-        )
+        # End the existing session
+        existing_session.status = "completed" 
+        existing_session.ended_at = datetime.utcnow()  # Add an end time for the session
+        db.commit()
+        db.refresh(existing_session)
 
     # Create a new session
-    session_id = str(uuid.uuid4())
+    session_id = str(uuid.uuid4())  # Generate a new session ID
     new_session = SessionModel(
         id=session_id,
         user_id=user_id,
         status="active",
-        started_at=datetime.utcnow()
+        started_at=datetime.utcnow()  # Current time for session start
     )
     db.add(new_session)
     db.commit()
@@ -279,6 +272,13 @@ def ask_question(
     if not session:
         logger.error(f"Invalid or inactive session_id: {input.session_id}")
         return APIResponse(error="Invalid or inactive session ID.", data=None)
+    
+    # Update session details with new information
+    session.title = f"{input.class_name} - {input.subject_name} - {input.chapter_name} - {input.topic_name}"
+    session.last_message = input.question
+    session.last_message_time = datetime.utcnow()
+    db.commit()
+    db.refresh(session)
 
     # Construct system and user messages
     system_message = {
@@ -306,8 +306,12 @@ def ask_question(
         )
 
         structured_data = completion.choices[0].message.parsed
-        input_tokens = completion.usage.input_tokens
-        output_tokens = completion.usage.output_tokens
+        usage_data = completion.usage  # This might be a custom object, so access directly
+
+        # Example: if usage_data is a custom object, try accessing attributes directly:
+        input_tokens = usage_data.input_tokens if hasattr(usage_data, 'input_tokens') else None
+        output_tokens = usage_data.output_tokens if hasattr(usage_data, 'output_tokens') else None
+
         model_used = "gpt-4o-mini"  # Update as required
 
         # Save the interaction in the database
@@ -330,13 +334,40 @@ def ask_question(
         logger.error(f"Error processing question: {str(e)}")
         return APIResponse(error=f"OpenAI API error: {str(e)}", data=None)
 
+@router.get("/sessions", response_model=SessionListResponse)
+def get_sessions(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Retrieves a list of sessions for the current user.
+    """
+    user_id = current_user.user_id
 
+    # Query sessions for the current user
+    sessions = db.query(SessionModel).filter(
+        SessionModel.user_id == user_id
+    ).order_by(SessionModel.started_at.desc()).all()
 
+    # Map sessions to response model
+    session_list = [
+        SessionOneResponse(
+            id=str(session.id),
+            title=session.title,
+            status=session.status,
+            last_message=session.last_message,
+            last_message_time=session.last_message_time,
+            started_at=session.started_at,
+            ended_at=session.ended_at,
+        )
+        for session in sessions
+    ]
 
-
-
-
-
+    return SessionListResponse(
+        success=True,
+        message="Session list retrieved successfully.",
+        data=session_list
+    )
 
 
 

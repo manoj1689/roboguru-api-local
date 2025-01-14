@@ -210,6 +210,22 @@ class SessionResponse(SessionBase):
     class Config:
         from_attributes = True
 
+class SessionOneResponse(BaseModel):
+    id: str
+    title: str
+    status: str
+    last_message: Optional[str] = None 
+    last_message_time: Optional[datetime] = None
+    started_at: datetime
+    ended_at: Optional[datetime] = None 
+
+class SessionListResponse(BaseModel):
+    success: bool
+    message: str
+    data: List[SessionOneResponse]  # Change to use SessionOneResponse here
+
+
+
 class UserCreate(BaseModel):
     mobile_number: str = Field(..., pattern=r"^\d{10}$")
     type: str = Field(default="normal")
