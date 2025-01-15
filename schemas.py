@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, root_validator, EmailStr
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Union
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime, date
 import uuid
@@ -212,13 +212,13 @@ class SessionResponse(SessionBase):
 
 class SessionOneResponse(BaseModel):
     id: str
-    title: str
+    title: Optional[str] = None  # Allow title to be None
     status: str
-    last_message: Optional[str] = None 
+    last_message: Optional[str] = None
     last_message_time: Optional[datetime] = None
     started_at: datetime
-    ended_at: Optional[datetime] = None 
-
+    ended_at: Optional[datetime] = None
+    
 class SessionListResponse(BaseModel):
     success: bool
     message: str
@@ -306,3 +306,21 @@ class NotificationRequest(BaseModel):
     topic: str  # Topic for grouping notifications
     title: str  # Notification title
     body: str  # Notification body
+
+class QuestionInput(BaseModel):
+    session_id: str
+    class_name: str
+    subject_name: str
+    chapter_name: str
+    topic_name: str
+    question: str
+    chat_history: Optional[List[Dict[str, str]]] = []  
+
+class StructuredResponse(BaseModel):
+    answer: str
+    details: str
+    suggested_questions: List[str]
+
+    def to_dict_list(self):
+        return [{kvp.key: kvp.value} for kvp in self.items]
+
