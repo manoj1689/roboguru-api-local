@@ -26,7 +26,7 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         mobile_number = payload.get("sub") or payload.get("email")
-        
+        print("--------", mobile_number)
         if not mobile_number:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -56,3 +56,4 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
             detail="Invalid token.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+

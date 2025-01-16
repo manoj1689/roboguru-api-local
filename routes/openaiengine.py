@@ -154,8 +154,11 @@ def speech_to_text_endpoint(
 
 
 # Define the new folder for storing TTS audio files
-TTS_UPLOAD_DIR = "tts_uploaded_audio"
+TTS_UPLOAD_DIR = "uploaded_audio"
 os.makedirs(TTS_UPLOAD_DIR, exist_ok=True)
+
+router.mount("/uploaded_audio", StaticFiles(directory=UPLOAD_DIR), name="uploaded_audio")
+
 
 @router.post("/text-to-speech/", response_model=TTSOutput)
 def text_to_speech_endpoint(
@@ -199,7 +202,7 @@ def text_to_speech_endpoint(
             success=True,
             message="Text-to-speech conversion successful",
             data={
-                "file_url": f"/uploaded_audio/{unique_filename}",  # URL for accessing the file
+                "file_url": f"{unique_filename}",  
                 "characters_used": len(tts_input.text),
                 "timestamp": tts_record.timestamp.isoformat(),
                 "language_used": tts_record.language_code,
@@ -211,7 +214,18 @@ def text_to_speech_endpoint(
             success=False,
             message=f"Text-to-speech conversion failed: {str(e)}"
         )
+    
+from fastapi.responses import FileResponse
 
+@router.get("/{filename}")
+async def get_file(
+    filename: str,
+    current_user: str = Depends(get_current_user)
+):
+    file_path = f"./uploaded_audio/{filename}" 
+    if os.path.exists(file_path):  
+        return FileResponse(file_path) 
+    return {"error": "File not found"}  
 
 @router.post("/upload-image/", response_model=UploadImageOutput)
 def upload_image_endpoint(

@@ -121,7 +121,7 @@ def get_user_profile(
             success=False,
             message="An unexpected error occurred"
         )
-
+        
 
 @router.put("/profile/update", response_model=None)
 def update_user_profile(
@@ -131,8 +131,8 @@ def update_user_profile(
 ):
     try:
         # Fetch the user from the database
-        user = db.query(User).filter(User.mobile_number == current_user.mobile_number).first()
-        print(f"Debug: current_user = {user}")
+        user = db.query(User).filter(User.user_id == current_user.user_id).first()
+
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -206,6 +206,8 @@ def update_user_profile(
             success=False,
             message=f"An unexpected error occurred: {str(e)}"
         )
+
+
 
 @router.delete("/users/{user_id}")
 def remove_user(user_id: str, db: Session = Depends(get_db), _: User = Depends(superadmin_only)):

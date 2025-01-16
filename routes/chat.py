@@ -78,6 +78,12 @@ def ask_question(
     Handles a question input from the user and returns an answer with structured output.
     """
     logger.info("Received a question request")
+    try:
+        # Validate and convert session_id to UUID
+        session_id = uuid.UUID(input.session_id)
+    except ValueError:
+        logger.error(f"Invalid session_id format: {input.session_id}")
+        return create_response(success=False, message="Invalid session ID format.", data=None, status_code=400)
 
     # Validate session_id
     session = db.query(SessionModel).filter(
