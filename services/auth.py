@@ -9,51 +9,102 @@ from database import get_db
 from services.classes import create_response
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-
 def create_refresh_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(days=7)) 
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     try:
+        # Decode the token
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        mobile_number = payload.get("sub") or payload.get("email")
-        print("--------", mobile_number)
-        if not mobile_number:
+        user_identifier = payload.get("sub")  # Extract user_id from the token payload
+        
+        if not user_identifier:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token or token expired.",
-                headers={"WWW-Authenticate": "Bearer"},
+                detail="Token payload missing 'sub' (user_id).",
             )
-        
-        user = db.query(User).filter(
-            (User.mobile_number == mobile_number) | (User.email == mobile_number)
-        ).first()
+        # # Debugging logs
+        # print(f"Decoded payload: {payload}")
+        # print(f"Extracted user_identifier: {user_identifier}")
+
+        # Find the user by user_id (as string)
+        user = db.query(User).filter(User.user_identifier == str(user_identifier)).first()
         if not user:
+            # print(f"No user found with identifier: {user_identifier}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found.",
             )
-        
+
         return user
+
     except ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired.",
-            headers={"WWW-Authenticate": "Bearer"},
         )
-    except JWTError:
+    except JWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token.",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail=f"Token is invalid: {str(e)}",
         )
 
+
+
+
+
+
+
+
+
+
+
+# def create_access_token(data: dict, expires_delta: timedelta = None):
+#     to_encode = data.copy()
+#     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+#     to_encode.update({"exp": expire})
+#     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+# def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+#     try:
+#         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+#         mobile_number = payload.get("sub") or payload.get("email")
+#         print("--------", mobile_number)
+#         if not mobile_number:
+#             raise HTTPException(
+#                 status_code=status.HTTP_401_UNAUTHORIZED,
+#                 detail="Invalid token or token expired.",
+#                 headers={"WWW-Authenticate": "Bearer"},
+#             )
+        
+#         user = db.query(User).filter(
+#             (User.mobile_number == mobile_number) | (User.email == mobile_number)
+#         ).first()
+#         if not user:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail="User not found.",
+#             )
+        
+#         return user
+#     except ExpiredSignatureError:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Token has expired.",
+#             headers={"WWW-Authenticate": "Bearer"},
+#         )
+#     except JWTError:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Invalid token.",
+#             headers={"WWW-Authenticate": "Bearer"},
+        # )

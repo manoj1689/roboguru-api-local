@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db
 import models
-from routes import firebase, classes, subjects, chapters, topics, login, chat, level, users, trending, openaiengine
+from routes import search, firebase, classes, subjects, chapters, topics, login, chat, level, users, trending, openaiengine
 from services.users import create_superadmin
 from exception_handlers import custom_http_exception_handler
 from fastapi.exceptions import HTTPException
@@ -31,6 +31,7 @@ app.include_router(chat.router, prefix="/chat", tags=["chat"])
 app.include_router(trending.router, prefix="/trending", tags=["trending"])
 app.include_router(openaiengine.router, prefix="/openaiengine", tags=["openaiengine"])
 app.include_router(firebase.router, prefix="/firebase", tags=["firebase"])
+app.include_router(search.router, prefix="/search", tags=["search"])
 
 
 

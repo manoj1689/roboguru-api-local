@@ -284,6 +284,7 @@ class UpdateUserProfileRequest(BaseModel):
     user_class: Optional[str]
     language: Optional[str]
 
+
 class UpdateTrendingTopicRequest(BaseModel):
     topic_id: str
     is_trending: bool

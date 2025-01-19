@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
 from database import get_db
 from models import User, EducationLevel, Class
+from sqlalchemy import cast, BigInteger
 from services.users import (
     get_all_users,
     delete_user,
@@ -87,16 +88,14 @@ def list_all_users(
 @router.get("/profile", response_model=None)
 def get_user_profile(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)  # Validated user
+    current_user: User = Depends(get_current_user) 
 ):
     try:
-        # Fetch user details from the database
-        user = db.query(User).filter(User.mobile_number == current_user.mobile_number).first()
+        user = db.query(User).filter(User.user_id == current_user.user_id).first()
 
         if not user:
             return create_response(success=False, message="User not found")
 
-        # Prepare the response data
         response_data = {
             "id": user.user_id,
             "name": user.name,
@@ -146,7 +145,7 @@ def update_user_profile(
         if "education_level" in profile_data_dict:
             education_level = (
                 db.query(EducationLevel)
-                .filter(EducationLevel.name == profile_data_dict["education_level"])
+                .filter(EducationLevel.id == profile_data_dict["education_level"])
                 .first()
             )
             if not education_level:
@@ -159,7 +158,7 @@ def update_user_profile(
         if "user_class" in profile_data_dict:
             user_class = (
                 db.query(Class)
-                .filter(Class.name == profile_data_dict["user_class"])
+                .filter(Class.id == profile_data_dict["user_class"])
                 .first()
             )
             if not user_class:
@@ -206,8 +205,6 @@ def update_user_profile(
             success=False,
             message=f"An unexpected error occurred: {str(e)}"
         )
-
-
 
 @router.delete("/users/{user_id}")
 def remove_user(user_id: str, db: Session = Depends(get_db), _: User = Depends(superadmin_only)):

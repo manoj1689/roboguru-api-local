@@ -252,7 +252,7 @@ def upload_image_endpoint(
             raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
 
         # Generate accessible URL
-        image_url = f"/uploaded_images/{unique_filename}"
+        image_url = f"{unique_filename}"
         image_urls.append(image_url)
 
         # Save image URL to DB

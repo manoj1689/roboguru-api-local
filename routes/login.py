@@ -7,7 +7,7 @@ from models import User
 from services.dependencies import superadmin_only
 from uuid import uuid4
 from services.classes import create_response
-from schemas import OTPRequest, OTPVerification, AdminLogin, TokenRequest
+from schemas import OTPRequest, OTPVerification, AdminLogin
 from jose import JWTError, jwt
 from core.config import settings
 
@@ -36,8 +36,8 @@ def send_otp(request: OTPRequest, db: Session = Depends(get_db)):
 @router.post("/verify_otp")
 def verify_otp(request: OTPVerification, db: Session = Depends(get_db)):
     try:
-        # Check if the user exists
-        user = db.query(User).filter(User.mobile_number == request.mobile_number).first()
+        # Check if the user exists based on mobile_number (user_id here refers to the mobile number)
+        user = db.query(User).filter(User.mobile_number == request.user_id).first()
 
         if not user:
             raise HTTPException(
@@ -51,21 +51,23 @@ def verify_otp(request: OTPVerification, db: Session = Depends(get_db)):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid OTP. Please try again."
             )
+
         user.is_verified = True
         user.otp = None  
         db.commit()
 
-        # Generate access token
-        access_token = create_access_token(data={"sub": user.mobile_number, "role": user.type})
+        # Generate access token using user.user_id (not mobile number)
+        access_token = create_access_token(data={"sub": user.user_id, "role": user.type})
         refresh_token = create_refresh_token(data={"sub": user.mobile_number})
+        
         return create_response(
             success=True,
             message="Verification successful. Login successful.",
             data={
                 "access_token": access_token,
                 "refresh_token": refresh_token,
-                  "token_type": "bearer",
-                    "role": user.type
+                "token_type": "bearer",
+                "role": user.type
             }
         )
     except HTTPException as e:
@@ -137,50 +139,6 @@ def view_profile(
     )
 
 
-@router.post("/token/refresh")
-def refresh_token(request: TokenRequest, db: Session = Depends(get_db)):
-    token = request.refresh_token
-    if not token:
-        return create_response(
-            success=False,
-            message="Refresh token is required."
-        )
-
-    try:
-        # Decode the refresh token
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        mobile_number = payload.get("sub")
-        
-        if not mobile_number:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid refresh token"
-            )
-
-        user = db.query(User).filter(User.mobile_number == mobile_number).first()
-
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found"
-            )
-
-        access_token = create_access_token(data={"sub": user.mobile_number, "role": user.type})
-
-        return create_response(
-            success=True,
-            message="Access token successfully refreshed.",
-            data={
-                "access_token": access_token,
-                "token_type": "bearer"
-            }
-        )
-
-    except JWTError:
-        return create_response(
-            success=False,
-            message="Invalid refresh token."
-        )
 
 
 

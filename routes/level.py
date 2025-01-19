@@ -84,31 +84,41 @@ def read_level_id(
     except Exception as e:
         return create_response(success=False, message="An unexpected error occurred")
 
+# Endpoint to Fetch All Education Levels with Optional Search
 @router.get("/levels/all_data", response_model=None)
 def read_level_all_list(
     limit: int = 1000,
-    name: str = None,
+    name: Optional[str] = Query(None, description="Name to search for"),
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user), 
+    current_user: str = Depends(get_current_user),
 ):
     try:
+        # Fetch levels with search and limit
         levels_list = get_all_education_levels(db, limit=limit, name=name)
-        if levels_list is None:
+        if not levels_list:
             return create_response(success=False, message="Education Level not found")
+
+        # Format response data
         response_data = [
             {
-                "id": l.id,
-                "name": l.name,
-                "description": l.description,
-                "classes": [c.name for c in l.classes]
+                "id": level.id,
+                "name": level.name,
+                "description": level.description,
+                "classes": [cls.name for cls in level.classes],
             }
-            for l in levels_list
+            for level in levels_list
         ]
 
-        return create_response(success=True, message="Education levels retrieved successfully", data=response_data)
+        return create_response(
+            success=True,
+            message="Education levels retrieved successfully",
+            data=response_data,
+        )
     except Exception as e:
-        return create_response(success=False, message=f"An unexpected error occurred: {str(e)}")
-    
+        return create_response(
+            success=False,
+            message=f"An unexpected error occurred: {str(e)}",
+        )
 @router.put("/{level_id}", response_model=None)
 def update_level(
     level_id: str,

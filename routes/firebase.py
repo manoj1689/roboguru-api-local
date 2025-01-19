@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, status
 from core.firebase_config import initialize_firebase
 from firebase_admin import auth, messaging, exceptions
-import jwt
+from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from core.config import settings
-from schemas import FirebaseLoginInput
+from schemas import FirebaseLoginInput, TokenRequest
 from models import User
 from database import get_db
 from sqlalchemy.orm import Session
@@ -96,8 +96,8 @@ async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db
                 return create_response(success=False, message=f"Database error: {str(e)}")
 
         # Step 4: Generate tokens
-        jwt_access_token = create_access_token(data={"sub": identifier}, expires_delta=timedelta(hours=2))
-        jwt_refresh_token = create_refresh_token(data={"sub": identifier})
+        jwt_access_token = create_access_token(data={"sub": str(user.user_identifier),}, expires_delta=timedelta(hours=200))
+        jwt_refresh_token = create_refresh_token(data={"sub": str(user.user_identifier),})
 
         # Step 5: Return response
         return create_response(
@@ -120,6 +120,51 @@ async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db
 
     except Exception as e:
         return create_response(success=False, message=f"Unexpected error: {str(e)}")
+
+@router.post("/token/refresh")
+def refresh_token(request: TokenRequest, db: Session = Depends(get_db)):
+    token = request.refresh_token
+    if not token:
+        return create_response(
+            success=False,
+            message="Refresh token is required."
+        )
+
+    try:
+        # Decode the refresh token
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_identifier = payload.get("sub")
+        
+        if not user_identifier:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token"
+            )
+
+        user = db.query(User).filter(User.user_identifier == user_identifier).first()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+
+        access_token = create_access_token(data={"sub": user.user_identifier, "role": user.type})
+
+        return create_response(
+            success=True,
+            message="Access token successfully refreshed.",
+            data={
+                "access_token": access_token,
+                "token_type": "bearer"
+            }
+        )
+
+    except JWTError:
+        return create_response(
+            success=False,
+            message="Invalid refresh token."
+        )
 
 
 @router.post("/send-user-notification/")

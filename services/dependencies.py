@@ -34,6 +34,7 @@ def admin_only(current_user: dict, db: Session = Depends(get_db)):
 
 def superadmin_only(current_user: User = Depends(get_current_user)):
     if not current_user.is_superadmin:
+        print(f"Unauthorized user: {current_user.user_id}, {current_user.mobile_number}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Unauthorized access. Only superadmins are allowed."
