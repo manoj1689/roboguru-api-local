@@ -14,7 +14,9 @@ router = APIRouter()
 def update_trending_topic(
     request: UpdateTrendingTopicRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(superadmin_only),     
+    # current_user: User = Depends(superadmin_only),  
+    current_user: str = Depends(get_current_user),  
+
 ):
     try:
         topic = db.query(Topic).filter(Topic.id == request.topic_id).first()

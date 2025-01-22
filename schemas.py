@@ -283,6 +283,7 @@ class UpdateUserProfileRequest(BaseModel):
     education_level: Optional[str]
     user_class: Optional[str]
     language: Optional[str]
+    profile_image: Optional[str]
 
 
 class UpdateTrendingTopicRequest(BaseModel):
@@ -325,3 +326,51 @@ class StructuredResponse(BaseModel):
     def to_dict_list(self):
         return [{kvp.key: kvp.value} for kvp in self.items]
 
+class TopicResponse(BaseModel):
+    topic_id: str
+    topic_name: str
+    is_completed: bool
+    tagline: str
+    image_link: str
+    details: Optional[str]
+    subtopics: Optional[List] = None
+
+    class Config:
+        orm_mode = True
+
+
+class ChapterResponse(BaseModel):
+    chapter_id: str
+    chapter_name: str
+    topics: List[TopicResponse]
+    chapter_progress: float
+    tagline: str
+    image_link: str
+
+    class Config:
+        orm_mode = True
+
+
+class SubjectResponse(BaseModel):
+    subject_id: str
+    subject_name: str
+    chapters: List[ChapterResponse]
+    subject_progress: float
+    tagline: str
+    image_link: str
+    image_prompt: str
+
+    class Config:
+        orm_mode = True
+        
+class UserProgressResponse(BaseModel):
+    user_id: str
+    subjects: List[SubjectResponse]
+
+    class Config:
+        orm_mode = True
+
+
+class UpdateProgressRequest(BaseModel):
+    topic_id: str
+    is_completed: bool

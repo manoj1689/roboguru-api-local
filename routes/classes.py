@@ -14,7 +14,7 @@ router = APIRouter()
 def create_class(
     classes: schemas.ClassCreate = Body(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(superadmin_only),
+    current_user: str = Depends(get_current_user),
 ):
     try:
         created_class = create_class_in_db(db=db, classes=classes)

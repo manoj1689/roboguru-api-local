@@ -16,7 +16,7 @@ router = APIRouter()
 def create_chapter(
     chapter: schemas.ChapterCreate = Body(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(superadmin_only), 
+    current_user: str = Depends(get_current_user),
 ):
     try:
         created_chapter = services.chapters.create_chapter_in_db(db=db, chapter=chapter, subject_id=chapter.subject_id)

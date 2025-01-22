@@ -62,7 +62,9 @@ class Topic(Base, BaseMixin):
     subtopics = Column(JSON, default=list, nullable=True)
     is_trending = Column(Boolean, default=False)  
     priority = Column(Integer, default=0)  
+    is_completed = Column(Boolean, default=False)
 
+    progress = relationship("UserTopicProgress", back_populates="topic")
     chapter_id = Column(String, ForeignKey("chapters.id"))
     class_id = Column(String, ForeignKey("classes.id")) 
     chapter = relationship("Chapter", back_populates="topics")
@@ -94,6 +96,7 @@ class User(Base, BaseMixin):
     is_staff = Column(Boolean, default=False)
     is_normal = Column(Boolean, default=True)
 
+    progress = relationship("UserTopicProgress", back_populates="user")
     education = relationship("EducationLevel", back_populates="users")
     user_class_details = relationship("Class", back_populates="users")
 
@@ -166,3 +169,17 @@ class ImagesToTextModel(Base):
     token_used = Column(Integer, default=0)
     language_used = Column(String, default="en")
     timestamp = Column(DateTime, default=datetime.utcnow)
+
+# === UserTopicProgress Model ===
+class UserTopicProgress(Base, BaseMixin):
+    __tablename__ = "user_topic_progress"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    user_id = Column(String, ForeignKey("users.user_id"))
+    topic_id = Column(String, ForeignKey("topics.id"))
+    is_completed = Column(Boolean, default=False)
+    last_updated = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="progress")
+    topic = relationship("Topic", back_populates="progress")

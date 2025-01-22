@@ -15,7 +15,7 @@ router = APIRouter()
 def create_topic(
     topic: schemas.TopicCreate = Body(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(superadmin_only), 
+    current_user: str = Depends(get_current_user),
 ):
     try:
         db_topic = services.topics.create_topic(db=db, topic=topic, chapter_id=topic.chapter_id)
@@ -87,7 +87,6 @@ def read_topic(
             }
             for sub in db_topic
         ]
-
         return create_response(success=True, message="Topics retrieved successfully", data=response_data)
     except Exception as e:
         return create_response(success=False, message=f"An unexpected error occurred: {e}")

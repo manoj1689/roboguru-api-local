@@ -15,7 +15,7 @@ router = APIRouter()
 def create_subject(
     subject: schemas.SubjectCreate = Body(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(superadmin_only),
+    current_user: str = Depends(get_current_user),
 ):
     try:   
         created_subject = services.subjects.create_subject(db=db, subject=subject)

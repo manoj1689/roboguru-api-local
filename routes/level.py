@@ -16,7 +16,7 @@ router = APIRouter()
 def create_level(
     level: EducationLevelCreate = Body(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(superadmin_only),
+    current_user: str = Depends(get_current_user),
 ):
     try:
         created_level = create_education_level(db=db, level=level)
