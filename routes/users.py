@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from database import get_db
 from models import User, EducationLevel, Class
@@ -12,7 +12,7 @@ from services.dependencies import superadmin_only
 from schemas import OTPRequest, UserProfileResponse, UpdateUserProfileRequest
 from services.auth import get_current_user  
 from services.classes import create_response
-
+from fastapi.staticfiles import StaticFiles
 
 router = APIRouter()
 
@@ -209,3 +209,56 @@ def update_user_profile(
 @router.delete("/users/{user_id}")
 def remove_user(user_id: str, db: Session = Depends(get_db), _: User = Depends(superadmin_only)):
     return delete_user(user_id, db)
+
+from uuid import uuid4
+from pathlib import Path
+import os
+# Directory to save uploaded images
+UPLOAD_DIR = "uploaded_profile_images"
+Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
+
+# Mount static files for serving profile images
+router.mount("/profile_images", StaticFiles(directory="uploaded_profile_images"), name="profile_images")
+
+
+@router.post("/profile/upload-image", response_model=None)
+def upload_profile_image(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        # Validate file type
+        ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
+        file_extension = file.filename.split(".")[-1].lower()
+        if file_extension not in ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid file type. Only PNG, JPG, and JPEG are allowed."
+            )
+
+        # Generate unique filename
+        unique_filename = f"{uuid4()}.{file_extension}"
+        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+
+        # Save the file
+        with open(file_path, "wb") as f:
+            f.write(file.file.read())
+
+        # Create file URL
+        file_url = f"/profile_images/{unique_filename}"
+
+        # Save file information to the database if needed
+        # Example: db.add(...); db.commit()
+
+        # Return the file URL in the response
+        return create_response(
+            success=True,
+            message="Profile image uploaded successfully",
+            data={"image_url": file_url}
+        )
+    except Exception as e:
+        return create_response(
+            success=False,
+            message=f"An unexpected error occurred: {str(e)}"
+        )

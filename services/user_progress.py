@@ -10,10 +10,13 @@ def calculate_chapter_progress(chapter, user_id, db):
     total_topics = len(chapter.topics)
 
     if total_topics == 0:
+        print("-----------", total_topics)
         return 0.0
-
-    return (completed_topics / total_topics) * 100
-
+    r = (completed_topics / total_topics) * 100
+    print(completed_topics)
+    print(total_topics)
+    print('---------------',r)
+    return r                                                        
 def calculate_subject_progress(subject, user_id, db):
     total_chapters = len(subject.chapters)
     if total_chapters == 0:

@@ -27,7 +27,8 @@ def create_topic(
             "details":db_topic.details,
             "tagline": db_topic.tagline,
             "image_link": db_topic.image_link,
-            "subtopics": db_topic.subtopics
+            "subtopics": db_topic.subtopics,
+            "is_completed": db_topic.is_completed
         }
         return create_response(success=True, message="Topic created successfully", data=response_data)
     except HTTPException as e:
@@ -55,7 +56,8 @@ def read_all_topics(
                 "tagline": sub.tagline,
                 "details": sub.details,
                 "image_link": sub.image_link,
-                "subtopics": sub.subtopics
+                "subtopics": sub.subtopics,
+                "is_completed": False
             }
             for sub in topics
         ]
@@ -83,7 +85,8 @@ def read_topic(
                 "tagline": sub.tagline,
                 "details": sub.details,
                 "image_link": sub.image_link,
-                "subtopics": sub.subtopics
+                "subtopics": sub.subtopics,
+                "is_completed": False
             }
             for sub in db_topic
         ]

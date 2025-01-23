@@ -328,12 +328,7 @@ class StructuredResponse(BaseModel):
 
 class TopicResponse(BaseModel):
     topic_id: str
-    topic_name: str
     is_completed: bool
-    tagline: str
-    image_link: str
-    details: Optional[str]
-    subtopics: Optional[List] = None
 
     class Config:
         orm_mode = True
@@ -341,11 +336,8 @@ class TopicResponse(BaseModel):
 
 class ChapterResponse(BaseModel):
     chapter_id: str
-    chapter_name: str
     topics: List[TopicResponse]
     chapter_progress: float
-    tagline: str
-    image_link: str
 
     class Config:
         orm_mode = True
@@ -353,12 +345,9 @@ class ChapterResponse(BaseModel):
 
 class SubjectResponse(BaseModel):
     subject_id: str
-    subject_name: str
     chapters: List[ChapterResponse]
     subject_progress: float
-    tagline: str
-    image_link: str
-    image_prompt: str
+
 
     class Config:
         orm_mode = True
