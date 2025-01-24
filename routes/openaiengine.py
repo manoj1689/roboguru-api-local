@@ -25,6 +25,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 if not openai.api_key:
     raise ValueError("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
+base_url= os.getenv("BASE_URL")
 
 UPLOAD_DIR = "uploaded_images"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -227,41 +228,58 @@ async def get_file(
         return FileResponse(file_path) 
     return {"error": "File not found"}  
 
+# @router.post("/upload-image/", response_model=UploadImageOutput)
+# def upload_image_endpoint(
+#     files: List[UploadFile] = File(...),
+#     current_user: str = Depends(get_current_user),
+#     db: Session = Depends(get_db)
+# ):
+#     image_urls = []
+#     for file in files:
+#         # Validate file type
+#         if file.content_type not in ["image/png", "image/jpeg", "image/jpg", "image/gif"]:
+#             raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
+
+#         # Generate unique file name
+#         file_extension = os.path.splitext(file.filename)[1]
+#         unique_filename = f"{uuid.uuid4()}{file_extension}"
+#         file_path = os.path.join(UPLOAD_DIR, unique_filename)
+
+#         # Write file to disk
+#         try:
+#             with open(file_path, "wb") as f:
+#                 f.write(file.file.read())
+#         except Exception as e:
+#             raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+
+#         # Generate accessible URL
+#         image_url = f"{unique_filename}"
+#         image_urls.append(image_url)
+
+#         # Save image URL to DB
+#         image_entry = ImageModel(image_url=image_url)
+#         db.add(image_entry)
+#         db.commit()
+
+#     return UploadImageOutput(image_urls=image_urls)
+
 @router.post("/upload-image/", response_model=UploadImageOutput)
 def upload_image_endpoint(
     files: List[UploadFile] = File(...),
-    current_user: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: str = Depends(get_current_user),  
 ):
     image_urls = []
     for file in files:
-        # Validate file type
         if file.content_type not in ["image/png", "image/jpeg", "image/jpg", "image/gif"]:
             raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
-
-        # Generate unique file name
         file_extension = os.path.splitext(file.filename)[1]
         unique_filename = f"{uuid.uuid4()}{file_extension}"
         file_path = os.path.join(UPLOAD_DIR, unique_filename)
-
-        # Write file to disk
-        try:
-            with open(file_path, "wb") as f:
-                f.write(file.file.read())
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
-
-        # Generate accessible URL
-        image_url = f"{unique_filename}"
+        with open(file_path, "wb") as f:
+            f.write(file.file.read())
+        image_url = base_url + f"/uploaded_images/{unique_filename}"
         image_urls.append(image_url)
-
-        # Save image URL to DB
-        image_entry = ImageModel(image_url=image_url)
-        db.add(image_entry)
-        db.commit()
-
     return UploadImageOutput(image_urls=image_urls)
-
 
 @router.post("/images-to-text/", response_model=ImagesToTextOutput)
 def images_to_text_endpoint(

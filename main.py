@@ -6,6 +6,8 @@ from routes import user_progress, search, firebase, classes, subjects, chapters,
 from services.users import create_superadmin
 from exception_handlers import custom_http_exception_handler
 from fastapi.exceptions import HTTPException
+import os
+from fastapi.staticfiles import StaticFiles
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -19,6 +21,12 @@ app.add_middleware(
     allow_methods=["*"],  
     allow_headers=["*"],  
 )
+
+UPLOAD_DIR = "uploaded_images"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+app.mount("/uploaded_images", StaticFiles(directory=UPLOAD_DIR), name="uploaded_images")
+
 app.add_exception_handler(HTTPException, custom_http_exception_handler)
 app.include_router(login.router, tags=["login"])
 app.include_router(users.router, prefix="/users", tags=["Users"])
