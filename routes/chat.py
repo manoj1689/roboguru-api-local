@@ -192,7 +192,7 @@ def ask_question(
         "role": "system",
         "content": (
             "You are an educational assistant. Extract the response as a structured JSON object "
-            "with the fields: 'answer', 'details', and 'suggested_questions'."
+            "with the fields: 'answer', 'details', and 'suggested_questions'. Answer and Details should be in Markdown formate."
         )
     }
     user_message = {
