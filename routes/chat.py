@@ -1,5 +1,5 @@
 from fastapi import FastAPI,Form, HTTPException, APIRouter, Depends, File, UploadFile
-from schemas import QuestionInput, StructuredResponse, ChatResponse, SessionOneResponse, SessionResponse, SessionBase, SessionCreateResponse, ChatBase, ChatRequest, ChatTopicBasedRequest, SessionListResponse
+from schemas import QuestionInput, ChatStructuredResponse, ChatResponse, SessionOneResponse, SessionResponse, SessionBase, SessionCreateResponse, ChatBase, ChatRequest, ChatTopicBasedRequest, SessionListResponse
 from services.chat import get_all_sessions, convert_chat_history_to_dict, truncate_chat_history, summarize_history, calculate_tokens, save_chat_history
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
@@ -227,7 +227,7 @@ def ask_question(
         completion = openai_client.beta.chat.completions.parse(
             model="gpt-4o-mini",  # Replace with your actual model
             messages=messages,
-            response_format=StructuredResponse,
+            response_format=ChatStructuredResponse,
         )
 
         structured_data = completion.choices[0].message.parsed

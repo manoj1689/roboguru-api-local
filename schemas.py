@@ -317,14 +317,15 @@ class QuestionInput(BaseModel):
     topic_name: str
     question: str
     chat_history: Optional[List[Dict[str, str]]] = []  
-
-class StructuredResponse(BaseModel):
+    
+class ChatStructuredResponse(BaseModel):
+    """
+    Distinct model for Chat response parsing.
+    Suppose the structured output from OpenAI has
+    'answer', 'details', 'suggested_questions'.
+    """
     answer: str
-    details: str
-    suggested_questions: List[str]
-
-    def to_dict_list(self):
-        return [{kvp.key: kvp.value} for kvp in self.items]
+    suggested_questions: Optional[List[str]] = None
 
 class TopicResponse(BaseModel):
     topic_id: str
