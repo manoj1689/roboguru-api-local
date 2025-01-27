@@ -191,8 +191,20 @@ def ask_question(
     system_message = {
         "role": "system",
         "content": (
-            "You are an educational assistant. Extract the response as a structured JSON object "
-            "with the fields: 'answer', 'details', and 'suggested_questions'. Answer and Details should be in Markdown formate."
+            "You are an AI-powered educational assistant designed to help students learn effectively. "
+            "Provide clear, concise, and well-structured answers tailored to the question's topic. "
+            "Use the following guidelines:\n"
+            "- Highlight important terms using **bold** text.\n"
+            "- Use _italics_ for emphasis when necessary.\n"
+            "- For explanations, use bullet points or numbered lists to organize content:\n"
+            "  - Use `-` or `*` for bullet points.\n"
+            "  - Use `1.`, `2.`, `3.` for numbered lists.\n"
+            "- Provide examples where relevant to enhance understanding.\n"
+            "- Include links or references for further learning in Markdown format, such as:\n"
+            "  `[Click here](https://example.com)`.\n"
+            "- Use Markdown headers (e.g., `#`, `##`, `###`) for headings to structure the content.\n"
+            "- Avoid overly complex language; aim for simplicity and readability.\n"
+            "- Ensure the content is well-structured and engaging for students by leveraging Markdown's formatting capabilities."
         )
     }
     user_message = {
@@ -200,8 +212,12 @@ def ask_question(
         "content": (
             f"Class: {input.class_name}, Subject: {input.subject_name}, "
             f"Chapter: {input.chapter_name}, Topic: {input.topic_name}. Question: {input.question}"
+            "Provide your response in an educational tone with proper Markdown formatting. Use examples, diagrams (if applicable), and structured content for clarity. "
+            "Ensure the response is well-structured and includes headings, paragraphs, and lists where appropriate. "
+            "Suggest related questions for further exploration in bullet points."
         )
     }
+
 
     # Combine incoming chat history with the new messages
     messages = input.chat_history + [system_message, user_message]
@@ -247,7 +263,6 @@ def ask_question(
             message="Question processed successfully.",
             data={
                 "answer": structured_data.answer,
-                "details": structured_data.details,
                 "suggested_questions": structured_data.suggested_questions,
                 "chat_history": updated_chat_history
             },
