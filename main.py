@@ -19,7 +19,13 @@ Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 
 # Mount static files for serving profile images
 app.mount("/profile_images", StaticFiles(directory="uploaded_profile_images"), name="profile_images")
+# Directory to save uploaded images
 
+UPLOAD_DIR = "uploaded_images"
+Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
+
+# Mount static files for serving images
+app.mount("/images", StaticFiles(directory=UPLOAD_DIR), name="images")
 
 # Add CORS Middleware
 app.add_middleware(

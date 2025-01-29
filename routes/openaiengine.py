@@ -3,10 +3,10 @@ import uuid
 import base64
 import datetime
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Header, Form
+from fastapi import status, APIRouter, Depends, HTTPException, UploadFile, File, Header, Form
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from models import STTModel, ImageModel, ImagesToTextModel, TTSModel
+from models import STTModel, ImageModel, ImagesToTextModel, TTSModel, User
 from sqlalchemy.orm import Session
 from database import get_db
 from services.auth import get_current_user 
@@ -25,24 +25,12 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 if not openai.api_key:
     raise ValueError("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
-base_url= os.getenv("BASE_URL")
+BASE_URL= os.getenv("BASE_URL")
 
 UPLOAD_DIR = "uploaded_images"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-router.mount("/uploaded_images", StaticFiles(directory=UPLOAD_DIR), name="uploaded_images")
 
-# # Retrieve API keys from environment variable and split into a set
-# API_KEYS_ENV = os.getenv("API_KEYS")
-# if not API_KEYS_ENV:
-#     raise ValueError("API keys not found. Please set the API_KEYS environment variable.")
-
-# API_KEYS = set(API_KEYS_ENV.split(","))
-
-# def get_api_key(x_api_key: Optional[str] = Header(None)):
-#     if x_api_key not in API_KEYS:
-#         raise HTTPException(status_code=401, detail="Unauthorized")
-#     return x_api_key
 
 from pydantic import BaseModel, Field
 
@@ -228,58 +216,57 @@ async def get_file(
         return FileResponse(file_path) 
     return {"error": "File not found"}  
 
-# @router.post("/upload-image/", response_model=UploadImageOutput)
-# def upload_image_endpoint(
-#     files: List[UploadFile] = File(...),
-#     current_user: str = Depends(get_current_user),
-#     db: Session = Depends(get_db)
-# ):
-#     image_urls = []
-#     for file in files:
-#         # Validate file type
-#         if file.content_type not in ["image/png", "image/jpeg", "image/jpg", "image/gif"]:
-#             raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
+from uuid import uuid4
+from pathlib import Path
+import os
 
-#         # Generate unique file name
-#         file_extension = os.path.splitext(file.filename)[1]
-#         unique_filename = f"{uuid.uuid4()}{file_extension}"
-#         file_path = os.path.join(UPLOAD_DIR, unique_filename)
+# Directory to save uploaded images
+UPLOAD_DIR = "uploaded_images"
+Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 
-#         # Write file to disk
-#         try:
-#             with open(file_path, "wb") as f:
-#                 f.write(file.file.read())
-#         except Exception as e:
-#             raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+# Mount static files for serving images
+router.mount("/images", StaticFiles(directory=UPLOAD_DIR), name="images")
 
-#         # Generate accessible URL
-#         image_url = f"{unique_filename}"
-#         image_urls.append(image_url)
-
-#         # Save image URL to DB
-#         image_entry = ImageModel(image_url=image_url)
-#         db.add(image_entry)
-#         db.commit()
-
-#     return UploadImageOutput(image_urls=image_urls)
-
-@router.post("/upload-image/", response_model=UploadImageOutput)
-def upload_image_endpoint(
-    files: List[UploadFile] = File(...),
-    current_user: str = Depends(get_current_user),  
+@router.post("/upload-image", response_model=None)
+def upload_image(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    image_urls = []
-    for file in files:
-        if file.content_type not in ["image/png", "image/jpeg", "image/jpg", "image/gif"]:
-            raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
-        file_extension = os.path.splitext(file.filename)[1]
-        unique_filename = f"{uuid.uuid4()}{file_extension}"
+    try:
+        # Validate file type
+        ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+        file_extension = file.filename.split(".")[-1].lower()
+        if file_extension not in ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed."
+            )
+
+        # Generate unique filename
+        unique_filename = f"{uuid4()}.{file_extension}"
         file_path = os.path.join(UPLOAD_DIR, unique_filename)
+
+        # Save the file
         with open(file_path, "wb") as f:
             f.write(file.file.read())
-        image_url = base_url + f"/uploaded_images/{unique_filename}"
-        image_urls.append(image_url)
-    return UploadImageOutput(image_urls=image_urls)
+
+        # Create file URL
+        file_url = f"/images/{unique_filename}"
+        file_url = BASE_URL + file_url
+
+
+        # Return the file URL in the response
+        return create_response(
+            success=True,
+            message="Image uploaded successfully",
+            data={"image_url": file_url}
+        )
+    except Exception as e:
+        return create_response(
+            success=False,
+            message=f"An unexpected error occurred: {str(e)}"
+        )
 
 @router.post("/images-to-text/", response_model=ImagesToTextOutput)
 def images_to_text_endpoint(
