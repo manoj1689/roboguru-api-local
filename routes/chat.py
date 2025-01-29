@@ -269,8 +269,12 @@ def get_chats_for_session(
             #     "status": chat.status,
             #     "timestamp": chat.timestamp.isoformat(),
             # })
+            # Extract only the question part
+            question_match = re.search(r"Question:\s*(.*?)(?:\s*Provide|\s*$)", chat.request_message, re.IGNORECASE)
+            question = question_match.group(1).strip() if question_match else chat.request_message
+
             response_data.append(
-                {"role": "user", "content": chat.request_message}
+                {"role": "user", "content": question}
             )
             response_data.append(
                 {"role": "assistant", "content": chat.response_message}
