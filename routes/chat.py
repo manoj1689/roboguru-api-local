@@ -263,12 +263,18 @@ def get_chats_for_session(
             if match:
                 class_name, subject_name, chapter_name, topic_name = match.groups()
 
-            response_data.append({
-                "request_message": chat.request_message,
-                "response_message": chat.response_message,
-                "status": chat.status,
-                "timestamp": chat.timestamp.isoformat(),
-            })
+            # response_data.append({
+            #     "request_message": chat.request_message,
+            #     "response_message": chat.response_message,
+            #     "status": chat.status,
+            #     "timestamp": chat.timestamp.isoformat(),
+            # })
+            response_data.append(
+                {"role": "user", "content": chat.request_message}
+            )
+            response_data.append(
+                {"role": "assistant", "content": chat.response_message}
+            )
 
         return {
             "success": True,
