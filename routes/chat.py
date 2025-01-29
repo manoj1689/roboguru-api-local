@@ -17,6 +17,8 @@ import json
 from typing import Optional, Dict, List
 import logging
 from openai import OpenAI
+import re 
+
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -67,91 +69,6 @@ async def start_session(
         }
     )
 
-
-# @router.post("/ask-question/", response_model=None)
-# def ask_question(
-#     input: QuestionInput,
-#     db: Session = Depends(get_db),
-#     current_user: str = Depends(get_current_user)
-# ):
-#     """
-#     Handles a question input from the user and returns an answer with structured output.
-#     """
-#     logger.info("Received a question request")
-#     try:
-#         # Validate and convert session_id to UUID
-#         session_id = uuid.UUID(input.session_id)
-#     except ValueError:
-#         logger.error(f"Invalid session_id format: {input.session_id}")
-#         return create_response(success=False, message="Invalid session ID format.", data=None, status_code=400)
-
-#     # Validate session_id
-#     session = db.query(SessionModel).filter(
-#         SessionModel.id == input.session_id, SessionModel.status == "active"
-#     ).first()
-
-#     if not session:
-#         logger.error(f"Invalid or inactive session_id: {input.session_id}")
-#         return create_response(success=False, message="Invalid or inactive session ID.", data=None, status_code=400)
-    
-#     # Update session details with new information
-#     session.title = f"{input.class_name} - {input.subject_name} - {input.chapter_name} - {input.topic_name}"
-#     session.last_message = input.question
-#     session.last_message_time = datetime.utcnow()
-#     db.commit()
-#     db.refresh(session)
-
-#     # Construct system and user messages
-#     system_message = {
-#         "role": "system",
-#         "content": (
-#             "You are an educational assistant. Extract the response as a structured JSON object "
-#             "with the fields: 'answer', 'details', and 'suggested_questions'."
-#         )
-#     }
-#     user_message = {
-#         "role": "user",
-#         "content": (
-#             f"Class: {input.class_name}, Subject: {input.subject_name}, "
-#             f"Chapter: {input.chapter_name}, Topic: {input.topic_name}. Question: {input.question}"
-#         )
-#     }
-#     messages = input.chat_history + [system_message, user_message]
-
-#     try:
-#         # Call the OpenAI API
-#         completion = openai_client.beta.chat.completions.parse(
-#             model="gpt-4o-mini",  # Replace with the correct model
-#             messages=messages,
-#             response_format=StructuredResponse,
-#         )
-
-#         structured_data = completion.choices[0].message.parsed
-#         usage_data = completion.usage  # This might be a custom object, so access directly
-
-#         input_tokens = usage_data.input_tokens if hasattr(usage_data, 'input_tokens') else None
-#         output_tokens = usage_data.output_tokens if hasattr(usage_data, 'output_tokens') else None
-#         model_used = "gpt-4o-mini"  # Update as required
-
-#         # Save the interaction in the database
-#         chat_entry = ChatModel(
-#             session_id=input.session_id,
-#             request_message=user_message["content"],
-#             response_message=structured_data.answer,
-#             status="active",
-#             input_tokens=input_tokens,
-#             output_tokens=output_tokens,
-#             model_used=model_used,
-#             timestamp=datetime.utcnow()
-#         )
-#         db.add(chat_entry)
-#         db.commit()
-
-#         return create_response(success=True, message="Question processed successfully.", data=structured_data.dict(), status_code=200)
-
-#     except Exception as e:
-#         logger.error(f"Error processing question: {str(e)}")
-#         return create_response(success=False, message=f"OpenAI API error: {str(e)}", data=None, status_code=500)
 
 @router.post("/ask-question/", response_model=None)
 def ask_question(
@@ -327,9 +244,7 @@ def delete_session(
     except Exception as e:
         return create_response(success=False, message=f"An unexpected error occurred: {str(e)}")
 
-
-
-@router.get("/sessions/{session_id}/chats", response_model=List[ChatResponse])
+@router.get("/sessions/{session_id}/chats", response_model=dict)
 def get_chats_for_session(
     session_id: uuid.UUID, 
     db: Session = Depends(get_db), 
@@ -339,17 +254,33 @@ def get_chats_for_session(
         chats = db.query(ChatModel).filter(ChatModel.session_id == session_id, ChatModel.status == "active").order_by(ChatModel.timestamp).all()
         if not chats:
             return create_response(success=False, message="No chats found for this session")
-        response_data = [
-            {
-                "session_id": str(chat.session_id),  
+
+        response_data = []
+        class_name, subject_name, chapter_name, topic_name = None, None, None, None
+
+        for chat in chats:
+            match = re.search(r"Class:\s*([^,]+),\s*Subject:\s*([^,]+),\s*Chapter:\s*([^,]+),\s*Topic:\s*([^\.]+)", chat.request_message)
+            if match:
+                class_name, subject_name, chapter_name, topic_name = match.groups()
+
+            response_data.append({
                 "request_message": chat.request_message,
                 "response_message": chat.response_message,
                 "status": chat.status,
-                "timestamp": chat.timestamp.isoformat()  
-            }
-            for chat in chats
-        ]
-        return create_response(success=True, message="Chats found for this session successfully", data=response_data)
+                "timestamp": chat.timestamp.isoformat(),
+            })
+
+        return {
+            "success": True,
+            "message": "Chats found for this session successfully",
+            "session_id": str(session_id),
+            "class_name": class_name,
+            "subject_name": subject_name,
+            "chapter_name": chapter_name,
+            "topic_name": topic_name,
+            "data": response_data
+        }
+    
     except Exception as e:
         return create_response(success=False, message=f"An unexpected error occurred: {str(e)}")
 
@@ -370,85 +301,3 @@ def delete_chat(
     except Exception as e:
         return create_response(success=False, message=f"An unexpected error occurred: {str(e)}")
 
-
-# @router.post("/education/chat", response_model=None)
-# async def education_chat(
-#     request: ChatRequest, 
-#     current_user: str = Depends(get_current_user), 
-#     db: Session = Depends(get_db)
-# ):
-#     # user_id = current_user["id"]
-#     user_id = current_user.user_id
-#     session = db.query(SessionModel).filter(
-#         SessionModel.user_id == user_id, SessionModel.status == "active"
-#     ).first()
-
-#     if not session:
-#         session_id = str(uuid.uuid4())
-#         new_session = SessionModel(
-#             id=session_id,
-#             user_id=user_id,
-#             status="active",
-#             started_at=datetime.utcnow()
-#         )
-#         db.add(new_session)
-#         db.commit()
-#         db.refresh(new_session)
-#         session = new_session
-
-#     existing_chat = db.query(ChatModel).filter(ChatModel.session_id == session.id).all()
-#     chat_history_context = [
-#         {
-#             "user": chat.request_message,
-#             "bot": chat.response_message
-#         } for chat in existing_chat
-#     ] if existing_chat else []
-
-#     history_tokens = calculate_tokens(chat_history_context, model=MODEL)
-#     if history_tokens > MAX_HISTORY_TOKENS:
-#         truncated_history = truncate_chat_history(chat_history_context, MAX_HISTORY_TOKENS)
-#         summarized_context = summarize_history(truncated_history)
-#     else:
-#         summarized_context = chat_history_context
-
-#     prompt = f"""
-#     ### Educational Insights
-#     {summarized_context}
-
-#     ### User Query
-#     {request.request_message}
-
-#     ### Response
-#     Provide a knowledgeable and concise answer.
-#     """
-
-#     try:
-#         response = openai.chat.completions.create(
-#             model=MODEL,
-#             messages=[{"role": "system", "content": prompt}],
-#             max_tokens=500
-#         )
-#         bot_response = response.choices[0].message.content.strip()
-#         input_tokens = calculate_tokens(request.request_message, model=MODEL)
-#         output_tokens = calculate_tokens(bot_response, model=MODEL)
-
-#         save_chat_history(
-#             db, session.id, request.request_message, bot_response, input_tokens, output_tokens, MODEL
-#         )
-
-#         return create_response(
-#             success=True,
-#             message="Response generated successfully",
-#             data={
-#                 "session_id": str(session.id),
-#                 "request_message": request.request_message,
-#                 "response_message": bot_response,
-#                 "input_tokens": input_tokens,
-#                 "output_tokens": output_tokens,
-#                 "status": "active",
-#                 "model_used": MODEL,
-#                 "timestamp": datetime.utcnow().isoformat()
-#             }
-#         )
-#     except Exception as e:
-#         return create_response(success=False, message=f"Error: {str(e)}")
