@@ -4,6 +4,10 @@ sqlalchemy
 slowapi
 python-multipart
 jinja2>=3.0
-psycopg2
 psycopg2-binary
 python-Levenshtein
+pydantic[email]
+python-jose
+pydantic-settings
+openai
+firebase-admin
