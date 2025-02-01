@@ -7,7 +7,7 @@ from schemas import UpdateTrendingTopicRequest
 from services.dependencies import superadmin_only
 from services.classes import create_response
 from services.auth import get_current_user 
-
+from core.config import settings
 router = APIRouter()
 
 @router.post("/trending_topics/update")
@@ -44,21 +44,24 @@ def update_trending_topic(
     except Exception as e:
         return create_response(success=False, message=f"An unexpected error occurred: {e}")
 
+from sqlalchemy.orm import aliased
+from sqlalchemy.sql import func, distinct
+from sqlalchemy import desc, literal_column
+
 @router.get("/trending_topics/by_class/{class_id}")
 def get_trending_topics_by_class(
     class_id: str,
     db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user),  
+    current_user: str = Depends(get_current_user),
 ):
     try:
-        trending_topics = (
+        # Subquery to assign row numbers per subject
+        subquery = (
             db.query(
                 Topic.id,
                 Topic.tagline.label("topic_tagline"),
                 Topic.is_trending,
                 Topic.chapter_id,
-                Topic.is_deleted,
-                Topic.updated_at,
                 Topic.details,
                 Topic.name.label("topic_name"),
                 Topic.image_link,
@@ -70,7 +73,12 @@ def get_trending_topics_by_class(
                 Chapter.name.label("chapter_name"),
                 Chapter.tagline.label("chapter_tagline"),
                 Topic.created_at,
-                Topic.deleted_at,
+                func.row_number()
+                .over(
+                    partition_by=Subject.id,
+                    order_by=[desc(Topic.priority), desc(Topic.created_at)]
+                )
+                .label("row_num"),
             )
             .join(Chapter, Chapter.id == Topic.chapter_id)
             .join(Subject, Subject.id == Chapter.subject_id)
@@ -78,7 +86,13 @@ def get_trending_topics_by_class(
                 Subject.class_id == class_id,
                 Topic.is_trending == True
             )
-            .order_by(Topic.priority.desc(), Topic.created_at.desc())
+            .subquery()
+        )
+
+        # Select only top 5 per subject
+        trending_topics = (
+            db.query(subquery)
+            .filter(subquery.c.row_num <= settings.TRENDING_TOPICS_LIMIT)
             .all()
         )
 
@@ -91,18 +105,18 @@ def get_trending_topics_by_class(
 
         response_data = [
             {
-                "id": topic[0],
-                "name": topic[7],
-                "tagline": topic[1],
-                "details": topic[6],
-                "image_link": topic[8],
-                "priority": topic[9],
-                "chapter_id": topic[3],
-                "chapter_name": topic[14],
-                "chapter_tagline": topic[15],
-                "subject_id": topic[11],
-                "subject_name": topic[12],
-                "subject_tagline": topic[13],
+                "id": topic.id,
+                "name": topic.topic_name,
+                "tagline": topic.topic_tagline,
+                "details": topic.details,
+                "image_link": topic.image_link,
+                "priority": topic.priority,
+                "chapter_id": topic.chapter_id,
+                "chapter_name": topic.chapter_name,
+                "chapter_tagline": topic.chapter_tagline,
+                "subject_id": topic.subject_id,
+                "subject_name": topic.subject_name,
+                "subject_tagline": topic.subject_tagline,
             }
             for topic in trending_topics
         ]
