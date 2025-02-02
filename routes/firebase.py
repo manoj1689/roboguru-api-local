@@ -180,6 +180,7 @@ async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db
                     message="Login successful.",
                     data={
                         "uid": user.user_id,
+                        "name": user.name,
                         "email": user.email,
                         "phone_number": user.mobile_number,
                         "user_identifier": user.user_identifier,
