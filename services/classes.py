@@ -43,13 +43,18 @@ def get_class_by_level(db: Session, level_id: int):
     return db.query(Class).filter(Class.level_id == level_id, Class.is_deleted == False).all()
 
 
-def create_response(success: bool, message: str, data: dict = None, status_code: int = None):
+def create_response(success: bool, message: str, profile_updated: bool = None, data: dict = None, status_code: int = None):
+    response_content = {
+        "success": success,
+        "message": message,
+    }
+    
+    if profile_updated is not None:
+        response_content["profile_updated"] = profile_updated
+    
+    response_content["data"] = data if data is not None else {}
+
     return JSONResponse(
         status_code=status_code if status_code is not None else (200 if success else 400),
-        content={
-            "success": success,
-            "message": message,
-            "data": data if data is not None else {}
-        }
+        content=response_content
     )
-
