@@ -10,7 +10,8 @@ from sqlalchemy.orm import joinedload
 import uuid
 # Constants
 MAX_HISTORY_TOKENS = 1000
-MODEL = "gpt-4o-mini"
+# MODEL = "gpt-4o-mini"
+MODEL = "o3-mini"
 
 def calculate_tokens(text, model: str = MODEL) -> int:
     # Ensure text is a string if it's a list of objects

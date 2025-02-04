@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 MAX_HISTORY_TOKENS = 1000
-MODEL = "gpt-4o-mini"
+MODEL = "o3-mini"
 
 # Set up OpenAI client
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -142,7 +142,7 @@ def ask_question(
     try:
         # Call OpenAI API for structured completion
         completion = openai_client.beta.chat.completions.parse(
-            model="gpt-4o-mini",  # Replace with your actual model
+            model="o3-mini",  # Replace with your actual model
             messages=messages,
             response_format=ChatStructuredResponse,
         )
@@ -168,7 +168,7 @@ def ask_question(
             status="active",
             input_tokens=input_tokens,
             output_tokens=output_tokens,
-            model_used="gpt-4o-mini",  # Update model name as needed
+            model_used="o3-mini",  # Update model name as needed
             timestamp=datetime.utcnow()
         )
         db.add(chat_entry)
@@ -190,27 +190,74 @@ def ask_question(
         logger.error(f"Error processing question: {str(e)}")
         return create_response(success=False, message=f"OpenAI API error: {str(e)}", data=None, status_code=500)
 
+# @router.get("/sessions", response_model=None)
+# def get_sessions(
+#     db: Session = Depends(get_db),
+#     current_user: dict = Depends(get_current_user)
+# ):
+#     """
+#     Retrieves a list of sessions for the current user.
+#     """
+#     try:
+#         user_id = current_user.user_id
+
+#         # Query sessions for the current user
+#         sessions = db.query(SessionModel).filter(
+#             SessionModel.user_id == user_id
+#         ).order_by(SessionModel.started_at.desc()).all()
+
+#         # Map sessions to response model
+#         session_list = [
+#             {
+#                 "session_id": str(session.id),
+#                 "title": session.title or "Untitled Session",
+#                 "status": session.status,
+#                 "last_message": session.last_message,
+#                 "last_message_time": session.last_message_time.isoformat() if session.last_message_time else None,
+#                 "started_at": session.started_at.isoformat(),
+#                 "ended_at": session.ended_at.isoformat() if session.ended_at else None,
+#             }
+#             for session in sessions
+#         ]
+
+#         return create_response(success=True, message="Session list retrieved successfully", data=session_list)
+
+#     except Exception as e:
+#         logger.error(f"Error retrieving sessions: {str(e)}")
+#         return create_response(success=False, message=f"An unexpected error occurred: {str(e)}")
+
 @router.get("/sessions", response_model=None)
 def get_sessions(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Retrieves a list of sessions for the current user.
+    Retrieves a list of sessions for the current user excluding 'Untitled Session'.
+    Deletes 'Untitled Session' records if found.
     """
     try:
         user_id = current_user.user_id
 
-        # Query sessions for the current user
+        # Delete 'Untitled Session' records
+        db.query(SessionModel).filter(
+            SessionModel.user_id == user_id,
+            (SessionModel.title == None) | (SessionModel.title == "Untitled Session")
+        ).delete(synchronize_session=False)
+        db.commit()
+
+        # Query sessions excluding 'Untitled Session'
         sessions = db.query(SessionModel).filter(
-            SessionModel.user_id == user_id
+            SessionModel.user_id == user_id,
+            SessionModel.title != "Untitled Session",
+            SessionModel.title != None,
+            SessionModel.last_message != None
         ).order_by(SessionModel.started_at.desc()).all()
 
         # Map sessions to response model
         session_list = [
             {
                 "session_id": str(session.id),
-                "title": session.title or "Untitled Session",
+                "title": session.title,
                 "status": session.status,
                 "last_message": session.last_message,
                 "last_message_time": session.last_message_time.isoformat() if session.last_message_time else None,
@@ -225,7 +272,6 @@ def get_sessions(
     except Exception as e:
         logger.error(f"Error retrieving sessions: {str(e)}")
         return create_response(success=False, message=f"An unexpected error occurred: {str(e)}")
-
 
 
 @router.delete("/sessions/{session_id}")
