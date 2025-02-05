@@ -30,7 +30,7 @@ class Class(Base, BaseMixin):
     subjects = relationship("Subject", back_populates="class_")
     users = relationship("User", back_populates="user_class_details")
     topics = relationship("Topic", back_populates="class_")
-    # exams = relationship("Exam", back_populates="class_")
+    exams = relationship("Exam", back_populates="class_")
 
 class Subject(Base, BaseMixin):
     __tablename__ = "subjects"
@@ -42,7 +42,7 @@ class Subject(Base, BaseMixin):
     image_prompt = Column(String, nullable=True)
     class_ = relationship("Class", back_populates="subjects")
     chapters = relationship("Chapter", back_populates="subject")
-    # exams = relationship("Exam", back_populates="subject")  
+    exams = relationship("Exam", back_populates="subject")  
 
 class Chapter(Base, BaseMixin):
     __tablename__ = "chapters"
@@ -53,7 +53,7 @@ class Chapter(Base, BaseMixin):
     image_link = Column(String, nullable=True)
     subject = relationship("Subject", back_populates="chapters")
     topics = relationship("Topic", back_populates="chapter")
-    # exams = relationship("Exam", back_populates="chapter")  
+    exams = relationship("Exam", back_populates="chapter")  
 
 
 class Topic(Base, BaseMixin):
@@ -68,7 +68,7 @@ class Topic(Base, BaseMixin):
     priority = Column(Integer, default=0)  
     is_completed = Column(Boolean, default=False)
     
-    # exams = relationship("Exam", back_populates="topic")  
+    exams = relationship("Exam", back_populates="topic")  
     progress = relationship("UserTopicProgress", back_populates="topic")
     chapter_id = Column(String, ForeignKey("chapters.id"))
     class_id = Column(String, ForeignKey("classes.id")) 
@@ -101,7 +101,7 @@ class User(Base, BaseMixin):
     is_staff = Column(Boolean, default=False)
     is_normal = Column(Boolean, default=True)
 
-    # exams = relationship("Exam", back_populates="user")  
+    exams = relationship("Exam", back_populates="user")  
     progress = relationship("UserTopicProgress", back_populates="user")
     education = relationship("EducationLevel", back_populates="users")
     user_class_details = relationship("Class", back_populates="users")
@@ -190,38 +190,35 @@ class UserTopicProgress(Base, BaseMixin):
     user = relationship("User", back_populates="progress")
     topic = relationship("Topic", back_populates="progress")
 
-# class Exam(Base):
-#     __tablename__ = "exams_and_submissions"
+class Exam(Base, BaseMixin):
+    __tablename__ = "exams_and_submissions"
 
-#     id = Column(Integer, primary_key=True, autoincrement=True)
-#     user_id = Column(String, ForeignKey("users.user_id"), nullable=False)  
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String, ForeignKey("users.user_id"), nullable=False)  
 
-#     # Educational Hierarchy Fields
-#     class_id = Column(String, ForeignKey("classes.id"), nullable=False)
-#     subject_id = Column(String, ForeignKey("subjects.id"), nullable=False)
-#     chapter_id = Column(String, ForeignKey("chapters.id"), nullable=True)
-#     topic_id = Column(String, ForeignKey("topics.id"), nullable=True)
+    # Educational Hierarchy Fields
+    class_id = Column(String, ForeignKey("classes.id"), nullable=False)
+    subject_id = Column(String, ForeignKey("subjects.id"), nullable=False)
+    chapter_id = Column(String, ForeignKey("chapters.id"), nullable=True)
+    topic_id = Column(String, ForeignKey("topics.id"), nullable=True)
 
-#     exam_title = Column(String(255), nullable=True)
-#     exam_description = Column(Text, nullable=True)
+    exam_title = Column(String(255), nullable=True)
+    exam_description = Column(Text, nullable=True)
 
-#     questions_with_answers = Column(JSON, nullable=True)  # Combined questions and correct answers
-#     answers = Column(JSON, nullable=True)  # Student submissions
-#     score = Column(DECIMAL(5, 2), nullable=True)  # Student submission scores
+    questions_with_answers = Column(JSON, nullable=True)  # Combined questions and correct answers
+    answers = Column(JSON, nullable=True)  # Student submissions
+    score = Column(DECIMAL(5, 2), nullable=True)  # Student submission scores
 
-#     status = Column(Enum(
-#         'draft', 'ongoing', 'time_over', 'answer_submission_started', 
-#         'evaluating_result', 'completed', name='exam_status'
-#     ), default='draft', nullable=False)
+    status = Column(Enum(
+        'draft', 'ongoing', 'time_over', 'answer_submission_started', 
+        'evaluating_result', 'completed', name='exam_status'
+    ), default='draft', nullable=False)
 
-#     remark = Column(Text, nullable=True)
+    remark = Column(Text, nullable=True)
 
-#     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-#     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-
-#     # Relationships with Educational Entities
-#     class_ = relationship("Class", back_populates="exams")
-#     subject = relationship("Subject", back_populates="exams")
-#     chapter = relationship("Chapter", back_populates="exams")
-#     topic = relationship("Topic", back_populates="exams")
-#     user = relationship("User", back_populates="exams")
+    # Relationships with Educational Entities
+    class_ = relationship("Class", back_populates="exams")
+    subject = relationship("Subject", back_populates="exams")
+    chapter = relationship("Chapter", back_populates="exams")
+    topic = relationship("Topic", back_populates="exams")
+    user = relationship("User", back_populates="exams")

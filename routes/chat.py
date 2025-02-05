@@ -97,12 +97,6 @@ def ask_question(
         logger.error(f"Invalid or inactive session_id: {input.session_id}")
         return create_response(success=False, message="Invalid or inactive session ID.", data=None, status_code=400)
     
-    # Update session details
-    session.title = f"{input.class_name} - {input.subject_name} - {input.chapter_name} - {input.topic_name}"
-    session.last_message = input.question
-    session.last_message_time = datetime.utcnow()
-    db.commit()
-    db.refresh(session)
 
     # Construct system and user messages
     system_message = {
@@ -173,6 +167,12 @@ def ask_question(
         )
         db.add(chat_entry)
         db.commit()
+        # Update session details
+        session.title = f"{input.class_name} - {input.subject_name} - {input.chapter_name} - {input.topic_name}"
+        session.last_message = structured_data.answer  # Save the AI's answer here
+        session.last_message_time = datetime.utcnow()
+        db.commit()
+        db.refresh(session)
 
         # Return structured response with updated chat history
         return create_response(
@@ -254,18 +254,27 @@ def get_sessions(
         ).order_by(SessionModel.started_at.desc()).all()
 
         # Map sessions to response model
-        session_list = [
-            {
+        session_list = []
+        for session in sessions:
+            title_parts = session.title.split(" - ") if session.title else []
+            class_name = title_parts[0] if len(title_parts) > 0 else None
+            subject_name = title_parts[1] if len(title_parts) > 1 else None
+            chapter_name = title_parts[2] if len(title_parts) > 2 else None
+            topic = title_parts[3] if len(title_parts) > 3 else session.title
+
+            session_list.append({
                 "session_id": str(session.id),
-                "title": session.title,
+                "class_name": class_name,
+                "subject_name": subject_name,
+                "chapter_name": chapter_name,
+                "topic": topic,
+                "title": topic,
                 "status": session.status,
                 "last_message": session.last_message,
                 "last_message_time": session.last_message_time.isoformat() if session.last_message_time else None,
                 "started_at": session.started_at.isoformat(),
                 "ended_at": session.ended_at.isoformat() if session.ended_at else None,
-            }
-            for session in sessions
-        ]
+            })
 
         return create_response(success=True, message="Session list retrieved successfully", data=session_list)
 
@@ -297,7 +306,11 @@ def get_chats_for_session(
     current_user: str = Depends(get_current_user)
 ):
     try:
-        chats = db.query(ChatModel).filter(ChatModel.session_id == session_id, ChatModel.status == "active").order_by(ChatModel.timestamp).all()
+        chats = db.query(ChatModel).filter(
+            ChatModel.session_id == session_id,
+            ChatModel.status == "active"
+            ).order_by(ChatModel.timestamp
+        ).all()
         if not chats:
             return create_response(success=False, message="No chats found for this session")
 
@@ -309,12 +322,6 @@ def get_chats_for_session(
             if match:
                 class_name, subject_name, chapter_name, topic_name = match.groups()
 
-            # response_data.append({
-            #     "request_message": chat.request_message,
-            #     "response_message": chat.response_message,
-            #     "status": chat.status,
-            #     "timestamp": chat.timestamp.isoformat(),
-            # })
             # Extract only the question part
             question_match = re.search(r"Question:\s*(.*?)(?:\s*Provide|\s*$)", chat.request_message, re.IGNORECASE)
             question = question_match.group(1).strip() if question_match else chat.request_message
@@ -340,7 +347,7 @@ def get_chats_for_session(
     except Exception as e:
         return create_response(success=False, message=f"An unexpected error occurred: {str(e)}")
 
-
+ 
 @router.delete("/chats/{chat_id}")
 def delete_chat(
     chat_id: uuid.UUID, 
