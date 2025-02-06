@@ -212,7 +212,7 @@ class SessionResponse(SessionBase):
 
 class SessionOneResponse(BaseModel):
     id: str
-    title: Optional[str] = None  # Allow title to be None
+    title: Optional[str] = None  
     status: str
     last_message: Optional[str] = None
     last_message_time: Optional[datetime] = None
@@ -222,7 +222,7 @@ class SessionOneResponse(BaseModel):
 class SessionListResponse(BaseModel):
     success: bool
     message: str
-    data: List[SessionOneResponse]  # Change to use SessionOneResponse here
+    data: List[SessionOneResponse] 
 
 
 
@@ -298,16 +298,12 @@ class TokenRequest(BaseModel):
 class FirebaseLoginInput(BaseModel):
     id_token: str
 
-# class NotificationRequest(BaseModel):
-#     uid: str  # UID of the user
-#     operation: str  # Operation type (e.g., SUSPENDUSER, UPDATE_CARD_METADATA)
-
 
 class NotificationRequest(BaseModel):
-    uid: str  # UID of the user
-    topic: str  # Topic for grouping notifications
-    title: str  # Notification title
-    body: str  # Notification body
+    uid: str  
+    topic: str 
+    title: str  
+    body: str  
 
 class QuestionInput(BaseModel):
     session_id: str
@@ -364,3 +360,14 @@ class UserProgressResponse(BaseModel):
 class UpdateProgressRequest(BaseModel):
     topic_id: str
     is_completed: bool
+
+class QuestionRequest(BaseModel):
+    class_name: str
+    subject_name: str
+    chapter_name: Optional[str] = None  
+    topic_name: Optional[str] = None 
+    num_questions: int = 5
+    difficulty: str = "medium"
+
+class MixedQuestionRequest(QuestionRequest):
+    question_distribution: Dict[str, int]

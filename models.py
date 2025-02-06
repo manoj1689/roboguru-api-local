@@ -30,7 +30,7 @@ class Class(Base, BaseMixin):
     subjects = relationship("Subject", back_populates="class_")
     users = relationship("User", back_populates="user_class_details")
     topics = relationship("Topic", back_populates="class_")
-    exams = relationship("Exam", back_populates="class_")
+    # exams = relationship("Exam", back_populates="class_")
 
 class Subject(Base, BaseMixin):
     __tablename__ = "subjects"
@@ -42,7 +42,7 @@ class Subject(Base, BaseMixin):
     image_prompt = Column(String, nullable=True)
     class_ = relationship("Class", back_populates="subjects")
     chapters = relationship("Chapter", back_populates="subject")
-    exams = relationship("Exam", back_populates="subject")  
+    # exams = relationship("Exam", back_populates="subject")  
 
 class Chapter(Base, BaseMixin):
     __tablename__ = "chapters"
@@ -53,7 +53,7 @@ class Chapter(Base, BaseMixin):
     image_link = Column(String, nullable=True)
     subject = relationship("Subject", back_populates="chapters")
     topics = relationship("Topic", back_populates="chapter")
-    exams = relationship("Exam", back_populates="chapter")  
+    # exams = relationship("Exam", back_populates="chapter")  
 
 
 class Topic(Base, BaseMixin):
@@ -68,7 +68,7 @@ class Topic(Base, BaseMixin):
     priority = Column(Integer, default=0)  
     is_completed = Column(Boolean, default=False)
     
-    exams = relationship("Exam", back_populates="topic")  
+    # exams = relationship("Exam", back_populates="topic")  
     progress = relationship("UserTopicProgress", back_populates="topic")
     chapter_id = Column(String, ForeignKey("chapters.id"))
     class_id = Column(String, ForeignKey("classes.id")) 
@@ -197,17 +197,17 @@ class Exam(Base, BaseMixin):
     user_id = Column(String, ForeignKey("users.user_id"), nullable=False)  
 
     # Educational Hierarchy Fields
-    class_id = Column(String, ForeignKey("classes.id"), nullable=False)
-    subject_id = Column(String, ForeignKey("subjects.id"), nullable=False)
-    chapter_id = Column(String, ForeignKey("chapters.id"), nullable=True)
-    topic_id = Column(String, ForeignKey("topics.id"), nullable=True)
+    class_name = Column(String, nullable=False)
+    subject_name = Column(String,  nullable=False)
+    chapter_name = Column(String, nullable=True)
+    topic_name = Column(String, nullable=True)
 
     exam_title = Column(String(255), nullable=True)
     exam_description = Column(Text, nullable=True)
 
-    questions_with_answers = Column(JSON, nullable=True)  # Combined questions and correct answers
-    answers = Column(JSON, nullable=True)  # Student submissions
-    score = Column(DECIMAL(5, 2), nullable=True)  # Student submission scores
+    questions_with_answers = Column(JSON, nullable=True) 
+    answers = Column(JSON, nullable=True)  
+    score = Column(DECIMAL(5, 2), nullable=True)  
 
     status = Column(Enum(
         'draft', 'ongoing', 'time_over', 'answer_submission_started', 
@@ -217,8 +217,8 @@ class Exam(Base, BaseMixin):
     remark = Column(Text, nullable=True)
 
     # Relationships with Educational Entities
-    class_ = relationship("Class", back_populates="exams")
-    subject = relationship("Subject", back_populates="exams")
-    chapter = relationship("Chapter", back_populates="exams")
-    topic = relationship("Topic", back_populates="exams")
+    # class_ = relationship("Class", back_populates="exams")
+    # subject = relationship("Subject", back_populates="exams")
+    # chapter = relationship("Chapter", back_populates="exams")
+    # topic = relationship("Topic", back_populates="exams")
     user = relationship("User", back_populates="exams")
