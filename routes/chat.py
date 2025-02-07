@@ -450,12 +450,13 @@ def get_sessions(
 
         session_list = []
         for session in sessions:
-            title_parts = session.title.split(" - ") if session.title else []
-            class_name = title_parts[0] if len(title_parts) > 0 else None
-            subject_name = title_parts[1] if len(title_parts) > 1 else None
-            chapter_name = title_parts[2] if len(title_parts) > 2 else None
-            topic = title_parts[3] if len(title_parts) > 3 else session.title
+            title = session.title or "Unknown" 
+            title_parts = title.split(" - ")
 
+            class_name = title_parts[0] if len(title_parts) > 0 else "Unknown"
+            subject_name = title_parts[1] if len(title_parts) > 1 else "Unknown"
+            chapter_name = title_parts[2] if len(title_parts) > 2 else "Unknown"
+            topic = title_parts[3] if len(title_parts) > 3 else title
             session_list.append({
                 "session_id": str(session.id),
                 "class_name": class_name,
