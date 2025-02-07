@@ -345,3 +345,93 @@ def images_to_text_endpoint(
             success=False,
             message=f"Image-to-text conversion failed: {str(e)}",
         )
+
+# from pydantic import BaseModel, AnyHttpUrl
+# from typing import List
+
+# class AnalyzeImageInput(BaseModel):
+#     image_urls: List[AnyHttpUrl]  
+
+# @router.post("/analyze-image/")
+# def analyze_image_endpoint(
+#     images_input: AnalyzeImageInput,
+#     current_user: str = Depends(get_current_user),
+#     db: Session = Depends(get_db),
+# ):
+#     try:
+#         # Ensure image URLs have valid formats
+#         for image_url in images_input.image_urls:
+#             image_url = str(image_url)  # Convert HttpUrl to string
+#             if not image_url.lower().endswith((".png", ".jpeg", ".jpg", ".gif", ".webp")):
+#                 raise HTTPException(
+#                     status_code=400,
+#                     detail=f"Unsupported image format for URL: {image_url}. Supported formats: png, jpeg, jpg, gif, webp.",
+#                 )
+
+#         # Prepare the request payload for OpenAI API
+#         messages = [
+#             {
+#                 "role": "user",
+#                 "content": [{"type": "text", "text": "Describe the content of these images."}],
+#             }
+#         ]
+
+#         # Convert AnyHttpUrl to string before adding to messages
+#         for image_url in images_input.image_urls:
+#             messages[0]["content"].append({"type": "image_url", "image_url": {"url": str(image_url)}})
+
+#         # Call the OpenAI API for image analysis
+#         response = openai.chat.completions.create(
+#             model="gpt-4o-mini",
+#             messages=messages,
+#             max_tokens=300,
+#         )
+
+#         # Extract and format the response
+#         analysis_result = response.choices[0].message.content.strip()
+#         tokens_used = response.usage.total_tokens
+
+#         # Generate insightful questions prompt
+#         questions_prompt = f"Based on the provided images, generate 4 insightful questions that encourage further discussion.\n{analysis_result}"
+
+#         # Prepare messages for generating questions
+#         question_messages = [
+#             {
+#                 "role": "system",
+#                 "content": "You are an AI assistant that analyzes images and provides meaningful insights."
+#             },
+#             {
+#                 "role": "user",
+#                 "content": [{"type": "text", "text": questions_prompt}]
+#             }
+#         ]
+
+#         # Call OpenAI API to generate insightful questions
+#         question_response = openai.chat.completions.create(
+#             model="gpt-4o-mini",
+#             messages=question_messages,
+#             max_tokens=150,
+#         )
+
+#         # Extract the questions from the response
+#         questions = question_response.choices[0].message.content.strip()
+
+#         return create_response(
+#             success=True,
+#             message="Image analysis successful",
+#             data={
+#                 "analysis_text": analysis_result,
+#                 "suggested_questions": questions,
+#                 "model_used": "gpt-4o-mini",
+#                 "token_used": tokens_used,
+#                 "additional_data": {},
+#             },
+#         )
+
+#     except HTTPException as e:
+#         raise e  # Re-raise specific HTTPExceptions for proper client feedback
+#     except Exception as e:
+#         return create_response(
+#             success=False,
+#             message=f"Image analysis failed: {str(e)}",
+#         )

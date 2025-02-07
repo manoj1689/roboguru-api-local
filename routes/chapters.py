@@ -148,13 +148,3 @@ def delete_chapter(
     except Exception as e:
         return create_response(success=False, message=f"An unexpected error occurred: {e}")
 
-
-
-
-
-# @router.get("/{chapter_id}", response_model=schemas.Chapter)
-# def read_chapter(chapter_id: int, db: Session = Depends(get_db)):
-#     db_chapter = services.chapters.get_chapter(db=db, chapter_id=chapter_id)
-#     if db_chapter is None:
-#         raise HTTPException(status_code=404, detail="Chapter not found")
-#     return db_chapter
