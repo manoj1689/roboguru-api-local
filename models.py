@@ -128,6 +128,7 @@ class ChatModel(Base, BaseMixin):
     session_id = Column(UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False)
     request_message = Column(Text, nullable=True)
     response_message = Column(Text, nullable=True)
+    # chat_summary = Column(Text, nullable=True)
     status = Column(Enum("active", "deleted", name="chat_status"), default="active")
     input_tokens = Column(Integer, nullable=False, default=0)
     output_tokens = Column(Integer, nullable=False, default=0)
