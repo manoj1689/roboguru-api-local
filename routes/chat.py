@@ -247,7 +247,7 @@ def ask_question(
 
     session = db.query(SessionModel).filter(
         SessionModel.id == input.session_id, SessionModel.status == "active"
-    ).first()
+    ).with_for_update().first()
 
     if not session:
         return create_response(success=False, message="Invalid or inactive session ID.", data=None, status_code=400)
@@ -319,13 +319,11 @@ def ask_question(
 
         suggested_questions = getattr(structured_data, 'suggested_questions', [])
 
-        # ✅ **Update Summary in `SessionModel`**
         if is_first_chat:
             session.chat_summary = f"User's first question: {input.question}\nAI's response: {structured_data.answer}"
         else:
             session.chat_summary = summarize_history(db, input.session_id)  # Evolving summary
 
-        # 🔹 Save Chat Entry
         chat_entry = ChatModel(
             session_id=input.session_id,
             request_message=user_message["content"],
@@ -339,7 +337,10 @@ def ask_question(
         db.add(chat_entry)
         db.commit()
 
-        # ✅ **Update `SessionModel` with latest details**
+        session = db.query(SessionModel).filter(SessionModel.id == input.session_id).first()
+        if not session:
+            return create_response(success=False, message="Session not found while updating.", data=None, status_code=500)
+
         session.last_message = structured_data.answer
         session.last_message_time = datetime.utcnow()
         session.title = f"{input.class_name} - {input.subject_name} - {input.chapter_name} - {input.topic_name}"
@@ -358,7 +359,7 @@ def ask_question(
         )
 
     except Exception as e:
-        logger.error(f"Error processing question: {str(e)}")
+        logger.error(f"OpenAI API Error: {str(e)}")
         return create_response(success=False, message=f"OpenAI API error: {str(e)}", data=None, status_code=500)
 
 # @router.get("/sessions", response_model=None)
