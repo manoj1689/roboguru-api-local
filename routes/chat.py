@@ -71,238 +71,35 @@ async def start_session(
     )
 
 
-@router.post("/ask-question/", response_model=None)
-def ask_question(
-    input: QuestionInput,
-    db: Session = Depends(get_db),
-    current_user: str = Depends(get_current_user)
-):
-    """
-    Handles a question input from the user and returns an answer with structured output.
-    """
-    logger.info("Received a question request")
-    
-    # Validate and convert session_id to UUID
-    try:
-        session_id = uuid.UUID(input.session_id)
-    except ValueError:
-        logger.error(f"Invalid session_id format: {input.session_id}")
-        return create_response(success=False, message="Invalid session ID format.", data=None, status_code=400)
-
-    # Validate session_id
-    session = db.query(SessionModel).filter(
-        SessionModel.id == input.session_id, SessionModel.status == "active"
-    ).first()
-
-    if not session:
-        logger.error(f"Invalid or inactive session_id: {input.session_id}")
-        return create_response(success=False, message="Invalid or inactive session ID.", data=None, status_code=400)
-    
-
-    # Construct system and user messages
-    system_message = {
-        "role": "system",
-        "content": (
-            "You are an AI-powered educational assistant designed to help students learn effectively. "
-            "Provide clear, concise, and well-structured answers tailored to the question's topic. "
-            "Use the following guidelines:\n"
-            "- Highlight important terms using **bold** text.\n"
-            "- Use _italics_ for emphasis when necessary.\n"
-            "- For explanations, use bullet points or numbered lists to organize content:\n"
-            "  - Use `-` or `*` for bullet points.\n"
-            "  - Use `1.`, `2.`, `3.` for numbered lists.\n"
-            "- Provide examples where relevant to enhance understanding.\n"
-            "- Include links or references for further learning in Markdown format, such as:\n"
-            "  `[Click here](https://example.com)`.\n"
-            "- Use Markdown headers (e.g., `#`, `##`, `###`) for headings to structure the content.\n"
-            "- Avoid overly complex language; aim for simplicity and readability.\n"
-            "- Ensure the content is well-structured and engaging for students by leveraging Markdown's formatting capabilities."
-        )
-    }
-    user_message = {
-        "role": "user",
-        "content": (
-            f"Class: {input.class_name}, Subject: {input.subject_name}, "
-            f"Chapter: {input.chapter_name}, Topic: {input.topic_name}. Question: {input.question}"
-            "Provide your response in an educational tone with proper Markdown formatting. Use examples, diagrams (if applicable), and structured content for clarity. "
-            "Ensure the response is well-structured and includes headings, paragraphs, and lists where appropriate. "
-            "Suggest related questions for further exploration in bullet points."
-        )
-    }
-
-
-    # Combine incoming chat history with the new messages
-    messages = input.chat_history + [system_message, user_message]
-
-    try:
-        # Call OpenAI API for structured completion
-        completion = openai_client.beta.chat.completions.parse(
-            model="gpt-4o",  # Replace with your actual model
-            messages=messages,
-            response_format=ChatStructuredResponse,
-        )
-
-        structured_data = completion.choices[0].message.parsed
-        usage_data = completion.usage
-
-        # Extract token usage
-        input_tokens = getattr(usage_data, 'input_tokens', None)
-        output_tokens = getattr(usage_data, 'output_tokens', None)
-
-        # Append the new interaction to the chat history
-        updated_chat_history = input.chat_history + [
-            {"role": "user", "content": input.question},
-            {"role": "assistant", "content": structured_data.answer}
-        ]
-
-        # Save chat interaction in the database
-        chat_entry = ChatModel(
-            session_id=input.session_id,
-            request_message=user_message["content"],
-            response_message=structured_data.answer,
-            status="active",
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            model_used="gpt-4o",  # Update model name as needed
-            timestamp=datetime.utcnow()
-        )
-        db.add(chat_entry)
-        db.commit()
-        # Update session details
-        session.title = f"{input.class_name} - {input.subject_name} - {input.chapter_name} - {input.topic_name}"
-        session.last_message = structured_data.answer  # Save the AI's answer here
-        session.last_message_time = datetime.utcnow()
-        db.commit()
-        db.refresh(session)
-
-        # Return structured response with updated chat history
-        return create_response(
-            success=True,
-            message="Question processed successfully.",
-            data={
-                "answer": structured_data.answer,
-                "suggested_questions": structured_data.suggested_questions,
-                "chat_history": updated_chat_history
-            },
-            status_code=200
-        )
-
-    except Exception as e:
-        logger.error(f"Error processing question: {str(e)}")
-        return create_response(success=False, message=f"OpenAI API error: {str(e)}", data=None, status_code=500)
-
-
-# # Convert Chat History to JSON-Safe Format
-# def convert_chat_history_to_dict(chat_history_list: List[ChatModel]) -> List[Dict]:
-#     return [
-#         {
-#             "id": str(chat.id),
-#             "session_id": str(chat.session_id),
-#             "request_message": chat.request_message,
-#             "response_message": chat.response_message,
-#             "chat_summary": chat.chat_summary,
-#             "status": chat.status,
-#             "input_tokens": chat.input_tokens,
-#             "output_tokens": chat.output_tokens,
-#             "model_used": chat.model_used,
-#             "timestamp": chat.timestamp.isoformat()
-#         }
-#         for chat in chat_history_list
-#     ]
-
-
-# # Token Calculation Function
-# def calculate_tokens(text: str, model: str = MODEL) -> int:
-#     try:
-#         encoding = tiktoken.encoding_for_model(model)
-#         return len(encoding.encode(str(text)))
-#     except Exception as e:
-#         print(f"Token calculation error: {e}")
-#         return 0
-
-# # Summarize Chat History Function
-# def summarize_history(db: Session, session_id: str) -> str:
-#     chat_history = db.query(ChatModel).filter(
-#         ChatModel.session_id == session_id
-#     ).order_by(ChatModel.timestamp).all()
-
-#     if not chat_history:
-#         return "No previous chat history available."
-
-#     full_text = "\n".join([f"User: {m.request_message}\nBot: {m.response_message}" for m in chat_history])
-
-#     prompt = f"Summarize the following conversation concisely:\n\n{full_text}\n\nProvide a short and clear summary."
-
-#     try:
-#         response = openai_client.beta.chat.completions.parse(
-#             model=MODEL,
-#             messages=[{"role": "system", "content": prompt}],
-#             response_format=ChatStructuredResponse
-#         )
-
-#         summary = response.choices[0].message.parsed.answer if response.choices else "Summary not available."
-
-#         #  Save summary in the latest chat entry to avoid redundant summarization
-#         latest_chat = chat_history[-1]
-#         latest_chat.chat_summary = summary
-#         db.commit()
-
-#         return summary
-#     except Exception as e:
-#         print(f"Error during summarization: {e}")
-#         return "Summary could not be generated due to an error."
-
-
-# # Truncate Chat History Function
-# def truncate_chat_history(chat_history: List[ChatModel], max_tokens: int) -> List[ChatModel]:
-#     total_tokens = 0
-#     truncated_history = []
-
-#     for message in reversed(chat_history):
-#         message_tokens = calculate_tokens(f"{message.request_message} {message.response_message}", model=MODEL)
-#         if total_tokens + message_tokens > max_tokens:
-#             break
-#         truncated_history.insert(0, message)
-#         total_tokens += message_tokens
-
-#     return truncated_history
-
-
-# # API Route to Process Question
-# @router.post("/ask-question/")
+# @router.post("/ask-question/", response_model=None)
 # def ask_question(
-#     input: "QuestionInput",
+#     input: QuestionInput,
 #     db: Session = Depends(get_db),
 #     current_user: str = Depends(get_current_user)
 # ):
 #     """
-#     Handles a question input, summarizes chat history, and ensures the summary is always passed.
+#     Handles a question input from the user and returns an answer with structured output.
 #     """
 #     logger.info("Received a question request")
-
-#     # Validate session_id
+    
+#     # Validate and convert session_id to UUID
 #     try:
 #         session_id = uuid.UUID(input.session_id)
 #     except ValueError:
+#         logger.error(f"Invalid session_id format: {input.session_id}")
 #         return create_response(success=False, message="Invalid session ID format.", data=None, status_code=400)
 
+#     # Validate session_id
 #     session = db.query(SessionModel).filter(
 #         SessionModel.id == input.session_id, SessionModel.status == "active"
 #     ).first()
 
 #     if not session:
+#         logger.error(f"Invalid or inactive session_id: {input.session_id}")
 #         return create_response(success=False, message="Invalid or inactive session ID.", data=None, status_code=400)
+    
 
-#     # Retrieve and Process Chat History
-#     chat_history = db.query(ChatModel).filter(ChatModel.session_id == input.session_id).all()
-
-#     # Truncate chat history if necessary
-#     truncated_chat_history = truncate_chat_history(chat_history, TOKEN_LIMIT)
-
-#     # Summarize history (Ensuring a Summary Always Exists)
-#     chat_summary = summarize_history(db, input.session_id)
-
-#     # System & User Messages (Summary Always Included)
+#     # Construct system and user messages
 #     system_message = {
 #         "role": "system",
 #         "content": (
@@ -327,60 +124,65 @@ def ask_question(
 #         "content": (
 #             f"Class: {input.class_name}, Subject: {input.subject_name}, "
 #             f"Chapter: {input.chapter_name}, Topic: {input.topic_name}. Question: {input.question}"
-#             f"Previous Chat Summary:\n{chat_summary}\n\n"
 #             "Provide your response in an educational tone with proper Markdown formatting. Use examples, diagrams (if applicable), and structured content for clarity. "
 #             "Ensure the response is well-structured and includes headings, paragraphs, and lists where appropriate. "
 #             "Suggest related questions for further exploration in bullet points."
 #         )
 #     }
 
-#     # Combine Messages (Including Summary)
-#     messages = [{"role": "system", "content": chat_summary}] + [system_message, user_message]
+
+#     # Combine incoming chat history with the new messages
+#     messages = input.chat_history + [system_message, user_message]
 
 #     try:
-#         #  Call OpenAI API with `.parse`
+#         # Call OpenAI API for structured completion
 #         completion = openai_client.beta.chat.completions.parse(
-#             model=MODEL,
+#             model="gpt-4o",  # Replace with your actual model
 #             messages=messages,
 #             response_format=ChatStructuredResponse,
 #         )
 
-#         if not completion.choices:
-#             raise Exception("No response received from OpenAI.")
-
 #         structured_data = completion.choices[0].message.parsed
 #         usage_data = completion.usage
 
-#         # Save chat interaction (Including Summary)
+#         # Extract token usage
+#         input_tokens = getattr(usage_data, 'input_tokens', None)
+#         output_tokens = getattr(usage_data, 'output_tokens', None)
+
+#         # Append the new interaction to the chat history
+#         updated_chat_history = input.chat_history + [
+#             {"role": "user", "content": input.question},
+#             {"role": "assistant", "content": structured_data.answer}
+#         ]
+
+#         # Save chat interaction in the database
 #         chat_entry = ChatModel(
 #             session_id=input.session_id,
 #             request_message=user_message["content"],
 #             response_message=structured_data.answer,
-#             chat_summary=chat_summary,  # Always save summary
 #             status="active",
-#             input_tokens=getattr(usage_data, 'input_tokens', 0),
-#             output_tokens=getattr(usage_data, 'output_tokens', 0),
-#             model_used=MODEL,
+#             input_tokens=input_tokens,
+#             output_tokens=output_tokens,
+#             model_used="gpt-4o",  # Update model name as needed
 #             timestamp=datetime.utcnow()
 #         )
 #         db.add(chat_entry)
 #         db.commit()
-
 #         # Update session details
 #         session.title = f"{input.class_name} - {input.subject_name} - {input.chapter_name} - {input.topic_name}"
-#         session.last_message = structured_data.answer
+#         session.last_message = structured_data.answer  # Save the AI's answer here
 #         session.last_message_time = datetime.utcnow()
 #         db.commit()
 #         db.refresh(session)
 
-#         # Return Response with JSON-Safe Chat History
+#         # Return structured response with updated chat history
 #         return create_response(
 #             success=True,
 #             message="Question processed successfully.",
 #             data={
 #                 "answer": structured_data.answer,
-#                 "chat_summary": chat_summary,
-#                 "chat_history": convert_chat_history_to_dict(truncated_chat_history)  #  Now JSON-serializable
+#                 "suggested_questions": structured_data.suggested_questions,
+#                 "chat_history": updated_chat_history
 #             },
 #             status_code=200
 #         )
@@ -388,6 +190,156 @@ def ask_question(
 #     except Exception as e:
 #         logger.error(f"Error processing question: {str(e)}")
 #         return create_response(success=False, message=f"OpenAI API error: {str(e)}", data=None, status_code=500)
+
+
+
+# Summarize Chat History Function
+def summarize_history(db: Session, session_id: str) -> str:
+    chat_history = db.query(ChatModel).filter(
+        ChatModel.session_id == session_id
+    ).order_by(ChatModel.timestamp).all()
+
+    if not chat_history:
+        return "No previous chat history available."
+
+    full_text = "\n".join([f"User: {m.request_message}\nSystem: {m.response_message}" for m in chat_history])
+
+    prompt = f"Summarize the following conversation concisely:\n\n{full_text}\n\nProvide a short and clear summary."
+
+    try:
+        response = openai_client.beta.chat.completions.parse(
+            model=MODEL,
+            messages=[{"role": "system", "content": prompt}],
+            response_format=ChatStructuredResponse
+        )
+
+        summary = response.choices[0].message.parsed.answer if response.choices else "Summary not available."
+
+        #  Save summary in the latest chat entry to avoid redundant summarization
+        latest_chat = chat_history[-1]
+        latest_chat.chat_summary = summary
+        db.commit()
+
+        return summary
+    except Exception as e:
+        print(f"Error during summarization: {e}")
+        return "Summary could not be generated due to an error."
+
+# API Route to Process Question
+@router.post("/ask-question/")
+def ask_question(
+    input: "QuestionInput",
+    db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user)
+):
+    # Validate session_id
+    try:
+        session_id = uuid.UUID(input.session_id)
+    except ValueError:
+        return create_response(success=False, message="Invalid session ID format.", data=None, status_code=400)
+
+    session = db.query(SessionModel).filter(
+        SessionModel.id == input.session_id, SessionModel.status == "active"
+    ).first()
+
+    if not session:
+        return create_response(success=False, message="Invalid or inactive session ID.", data=None, status_code=400)
+
+    # Summarize history (Ensuring a Summary Always Exists)
+    chat_summary = summarize_history(db, input.session_id)
+
+    # System & User Messages (Summary Always Included)
+    system_message = {
+        "role": "system",
+        "content": (
+            "You are an AI-powered educational assistant designed to help students learn effectively. "
+            "Provide clear, concise, and well-structured answers tailored to the question's topic. "
+            "Use the following guidelines:\n"
+            "- Highlight important terms using **bold** text.\n"
+            "- Use _italics_ for emphasis when necessary.\n"
+            "- For explanations, use bullet points or numbered lists to organize content:\n"
+            "  - Use `-` or `*` for bullet points.\n"
+            "  - Use `1.`, `2.`, `3.` for numbered lists.\n"
+            "- Provide examples where relevant to enhance understanding.\n"
+            "- Include links or references for further learning in Markdown format, such as:\n"
+            "  `[Click here](https://example.com)`.\n"
+            "- Use Markdown headers (e.g., `#`, `##`, `###`) for headings to structure the content.\n"
+            "- Avoid overly complex language; aim for simplicity and readability.\n"
+            "- Ensure the content is well-structured and engaging for students by leveraging Markdown's formatting capabilities."
+        )
+    }
+    user_message = {
+        "role": "user",
+        "content": (
+            f"Class: {input.class_name}, Subject: {input.subject_name}, "
+            f"Chapter: {input.chapter_name}, Topic: {input.topic_name}. Question: {input.question}"
+            f"Previous Chat Summary:\n{chat_summary}\n\n"
+            "Provide your response in an educational tone with proper Markdown formatting. Use examples, diagrams (if applicable), and structured content for clarity. "
+            "Ensure the response is well-structured and includes headings, paragraphs, and lists where appropriate. "
+            "Suggest related questions for further exploration in bullet points."
+        )
+    }
+
+    # Combine Messages (Including Summary)
+    messages = [{"role": "system", "content": chat_summary}] + [system_message, user_message]
+
+    try:
+        #  Call OpenAI API with `.parse`
+        completion = openai_client.beta.chat.completions.parse(
+            model=MODEL,
+            messages=messages,
+            response_format=ChatStructuredResponse,
+        )
+
+        if not completion.choices:
+            raise Exception("No response received from OpenAI.")
+
+        structured_data = completion.choices[0].message.parsed
+        usage_data = completion.usage
+
+        input_tokens = getattr(usage_data, 'input_tokens', 0)
+        output_tokens = getattr(usage_data, 'output_tokens', 0)
+
+        suggested_questions = getattr(structured_data, 'suggested_questions', [])
+
+        chat_entry = ChatModel(
+            session_id=input.session_id,
+            request_message=user_message["content"],
+            response_message=structured_data.answer,
+            chat_summary=chat_summary, 
+            status="active",
+            input_tokens=getattr(usage_data, 'input_tokens', 0),
+            output_tokens=getattr(usage_data, 'output_tokens', 0),
+            model_used=MODEL,
+            timestamp=datetime.utcnow()
+        )
+        db.add(chat_entry)
+        db.commit()
+
+        # Update session details
+        session.title = f"{input.class_name} - {input.subject_name} - {input.chapter_name} - {input.topic_name}"
+        session.last_message = structured_data.answer
+        session.last_message_time = datetime.utcnow()
+        db.commit()
+        db.refresh(session)
+
+        # Return Response with JSON-Safe Chat History
+        return create_response(
+            success=True,
+            message="Question processed successfully.",
+            data={
+                "answer": structured_data.answer,
+                "suggested_questions": suggested_questions,
+                "chat_history": [{"chat_summary": chat_summary}] ,
+                # "chat_history": convert_chat_history_to_dict(truncated_chat_history)  #  Now JSON-serializable
+            },
+            status_code=200
+        )
+
+    except Exception as e:
+        logger.error(f"Error processing question: {str(e)}")
+        return create_response(success=False, message=f"OpenAI API error: {str(e)}", data=None, status_code=500)
+
 # @router.get("/sessions", response_model=None)
 # def get_sessions(
 #     db: Session = Depends(get_db),
@@ -467,10 +419,13 @@ def get_sessions(
                 "status": session.status,
                 "last_message": session.last_message,
                 "last_message_time": session.last_message_time.isoformat() if session.last_message_time else None,
-                "started_at": session.started_at.isoformat(),
+                "started_at": session.started_at,
                 "ended_at": session.ended_at.isoformat() if session.ended_at else None,
             })
+        session_list.sort(key=lambda x: (x["title"] == "Unknown", -x["started_at"].timestamp()))
 
+        for session in session_list:
+            session["started_at"] = session["started_at"].isoformat()
         return create_response(success=True, message="Session list retrieved successfully", data=session_list)
 
     except Exception as e:
