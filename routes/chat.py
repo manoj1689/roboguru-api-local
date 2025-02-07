@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 MAX_HISTORY_TOKENS = 1000
-MODEL = "o3-mini"
+MODEL = "gpt-4o"
 
 # Set up OpenAI client
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -136,7 +136,7 @@ def ask_question(
     try:
         # Call OpenAI API for structured completion
         completion = openai_client.beta.chat.completions.parse(
-            model="o3-mini",  # Replace with your actual model
+            model="gpt-4o",  # Replace with your actual model
             messages=messages,
             response_format=ChatStructuredResponse,
         )
@@ -162,7 +162,7 @@ def ask_question(
             status="active",
             input_tokens=input_tokens,
             output_tokens=output_tokens,
-            model_used="o3-mini",  # Update model name as needed
+            model_used="gpt-4o",  # Update model name as needed
             timestamp=datetime.utcnow()
         )
         db.add(chat_entry)
