@@ -117,6 +117,7 @@ class SessionModel(Base, BaseMixin):
     title = Column(String, nullable=True)  
     last_message = Column(String, nullable=True)  
     last_message_time = Column(DateTime, nullable=True)  
+    chat_summary = Column(Text, nullable=True) 
 
     chats = relationship("ChatModel", back_populates="session")
 
