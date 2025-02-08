@@ -221,7 +221,7 @@ def ask_question(
         "role": "system",
         "content": (
             "You are an AI-powered educational assistant designed to help students learn effectively. "
-            "Provide clear, concise, and well-structured answers tailored to the question's topic. "
+            # "Provide clear, concise, and well-structured answers tailored to the question's topic. "
             "Use the following guidelines:\n"
             "- Highlight important terms using **bold** text.\n"
             "- Use _italics_ for emphasis when necessary.\n"
@@ -239,6 +239,11 @@ def ask_question(
             "- Suggest related questions for further exploration using bullet points.\n"
             "- Answer the question and **update the chat summary** by integrating the response into the conversation history.\n"
             "- The chat summary should **evolve dynamically** based on previous interactions, the user's current question, and the AI-generated response."
+            "- If the user asks irrelevant, non-educational, or off-topic questions, provide a polite, simple response, such as:\n"
+            "  - 'You're welcome!'\n"
+            "  - 'I can't process that request right now.'\n"
+            "  - 'Please ask an educational question.'\n"
+            "- These responses should be brief and acknowledge the user's statement without further elaboration."
         )
     }
 
@@ -370,11 +375,12 @@ def get_sessions(
         user_id = current_user.user_id
 
         # Delete 'last_message is none Session' records
-        db.query(SessionModel).filter(
-            SessionModel.user_id == user_id,
-            (SessionModel.last_message == None)
-        ).delete(synchronize_session=False)
-        db.commit()
+
+        # db.query(SessionModel).filter(
+        #     SessionModel.user_id == user_id,
+        #     (SessionModel.last_message == None)
+        # ).delete(synchronize_session=False)
+        # db.commit()
 
         sessions = db.query(SessionModel).filter(
             SessionModel.user_id == user_id,
