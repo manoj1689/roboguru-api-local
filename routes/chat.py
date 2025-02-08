@@ -291,7 +291,7 @@ def ask_question(
         # Save chat entry in the database
         chat_entry = ChatModel(
             session_id=input.session_id,
-            request_message=user_message["content"],
+            request_message=input.question,
             response_message=structured_data.answer,
             status="active",
             input_tokens=input_tokens,
