@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 MAX_HISTORY_TOKENS = 1000
-MODEL = "gpt-4o"
+MODEL = "gpt-4o-mini"
 TOKEN_LIMIT = 300
 # Set up OpenAI client
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
