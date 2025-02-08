@@ -192,51 +192,9 @@ async def start_session(
 #         return create_response(success=False, message=f"OpenAI API error: {str(e)}", data=None, status_code=500)
 
 
-
-def summarize_history(db: Session, session_id: str) -> str:
-    chat_history = db.query(ChatModel).filter(
-        ChatModel.session_id == session_id
-    ).order_by(ChatModel.timestamp).all()
-
-    if not chat_history:
-        return "No previous chat history available."
-
-    # Pehla chat entry (first question-answer pair)
-    first_chat = chat_history[0]
-    full_text = f"User: {first_chat.request_message}\nSystem: {first_chat.response_message}"
-
-    # Agar multiple messages hain to puri history summarize karo
-    if len(chat_history) > 1:
-        additional_text = "\n".join([f"User: {m.request_message}\nSystem: {m.response_message}" for m in chat_history[1:]])
-        full_text += "\n" + additional_text
-
-    prompt = f"Summarize the following conversation concisely:\n\n{full_text}\n\nProvide a short and clear summary."
-
-    try:
-        response = openai_client.beta.chat.completions.parse(
-            model=MODEL,
-            messages=[{"role": "system", "content": prompt}],
-            response_format=ChatStructuredResponse
-        )
-
-        summary = response.choices[0].message.parsed.answer if response.choices else "Summary not available."
-
-        # Save summary in latest chat entry
-        latest_chat = chat_history[-1]
-        latest_chat.chat_summary = summary
-        db.commit()
-
-        return summary
-    except Exception as e:
-        print(f"Error during summarization: {e}")
-        return "Summary could not be generated due to an error."
-
-
-from datetime import datetime, timedelta
-
 @router.post("/ask-question/")
 def ask_question(
-    input: "QuestionInput",
+    input: QuestionInput,
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user)
 ):
@@ -252,53 +210,56 @@ def ask_question(
     if not session:
         return create_response(success=False, message="Invalid or inactive session ID.", data=None, status_code=400)
 
-    # Fetch previous chat summary from `SessionModel`
-    chat_summary = session.chat_summary or "No previous chat history available."
-    is_first_chat = chat_summary == "No previous chat history available."
+    # Ensure chat_summary is not None (to prevent null responses)
+    chat_summary = input.chat_summary if input.chat_summary else session.chat_summary
+    if chat_summary is None:
+        chat_summary = ""
 
-    # Detect if session is inactive for too long
-    session_inactive = session.last_message_time and (datetime.utcnow() - session.last_message_time > timedelta(minutes=30))
 
-    # Condition to send system message again
-    send_system_message = is_first_chat or session_inactive  
-
-    messages = []
-
-    if send_system_message:
-        # Send system message if first chat OR if session inactive
-        system_message = {
-            "role": "system",
-            "content": (
-                "You are an AI-powered educational assistant designed to help students learn effectively. "
-                "Provide clear, concise, and well-structured answers tailored to the question's topic. "
-                "Use the following guidelines:\n"
-                "- Highlight important terms using **bold** text.\n"
-                "- Use _italics_ for emphasis when necessary.\n"
-                "- For explanations, use bullet points or numbered lists to organize content:\n"
-                "  - Use `-` or `*` for bullet points.\n"
-                "  - Use `1.`, `2.`, `3.` for numbered lists.\n"
-                "- Provide examples where relevant to enhance understanding.\n"
-                "- Include links or references for further learning in Markdown format, such as:\n"
-                "  `[Click here](https://example.com)`.\n"
-                "- Use Markdown headers (e.g., `#`, `##`, `###`) for headings to structure the content.\n"
-                "- Avoid overly complex language; aim for simplicity and readability.\n"
-                "- Ensure the content is well-structured and engaging for students by leveraging Markdown's formatting capabilities."
-            )
-        }
-        messages.append(system_message)
+    # System instructions for AI
+    system_message = {
+        "role": "system",
+        "content": (
+            "You are an AI-powered educational assistant designed to help students learn effectively. "
+            "Provide clear, concise, and well-structured answers tailored to the question's topic. "
+            "Use the following guidelines:\n"
+            "- Highlight important terms using **bold** text.\n"
+            "- Use _italics_ for emphasis when necessary.\n"
+            "- For explanations, use bullet points or numbered lists to organize content:\n"
+            "  - Use `-` or `*` for bullet points.\n"
+            "  - Use `1.`, `2.`, `3.` for numbered lists.\n"
+            "- Provide examples where relevant to enhance understanding.\n"
+            "- Include links or references for further learning in Markdown format, such as:\n"
+            "  `[Click here](https://example.com)`.\n"
+            "- Use Markdown headers (e.g., `#`, `##`, `###`) for headings to structure the content.\n"
+            "- Avoid overly complex language; aim for simplicity and readability.\n"
+            "- Ensure responses are engaging and well-structured by leveraging Markdown formatting.\n"
+            "- Maintain an educational tone, using structured content, examples, and diagrams where applicable.\n"
+            "- Responses should include headings, paragraphs, and lists where appropriate.\n"
+            "- Suggest related questions for further exploration using bullet points.\n"
+            "- Answer the question and **update the chat summary** by integrating the response into the conversation history.\n"
+            "- The chat summary should **evolve dynamically** based on previous interactions, the user's current question, and the AI-generated response."
+        )
+    }
 
     user_message = {
         "role": "user",
         "content": (
             f"Class: {input.class_name}, Subject: {input.subject_name}, "
-            f"Chapter: {input.chapter_name}, Topic: {input.topic_name}. Question: {input.question}\n\n"
-            f"Previous Chat Summary:\n{chat_summary}\n\n"
-            "Provide your response in an educational tone with proper Markdown formatting. Use examples, diagrams (if applicable), and structured content for clarity. "
-            "Ensure the response is well-structured and includes headings, paragraphs, and lists where appropriate. "
-            "Suggest related questions for further exploration in bullet points."
+            f"Chapter: {input.chapter_name}, Topic: {input.topic_name}.\n\n"
+            f"Question: {input.question}\n\n"
+            f"Previous Chat Summary:\n{chat_summary if chat_summary else 'None'}"
         )
     }
-    messages.append(user_message)
+    # Construct AI message to update chat summary
+    update_summary_prompt = {
+        "role": "assistant",
+        "content": (
+            "Based on the previous chat summary and the new question, generate an updated chat summary "
+            "that retains relevant past information, incorporates the AI response, and ensures the conversation context is maintained."
+        )
+    }
+    messages = [system_message, user_message, update_summary_prompt]
 
     try:
         # 🔹 Call OpenAI API
@@ -309,21 +270,20 @@ def ask_question(
         )
 
         if not completion.choices:
-            raise Exception("No response received from OpenAI.")
+            return create_response(success=False, message="No response received from OpenAI.", data=None, status_code=500)
 
         structured_data = completion.choices[0].message.parsed
         usage_data = completion.usage
 
-        input_tokens = getattr(usage_data, 'input_tokens', 0)
-        output_tokens = getattr(usage_data, 'output_tokens', 0)
+        input_tokens = getattr(usage_data, "input_tokens", 0)
+        output_tokens = getattr(usage_data, "output_tokens", 0)
 
-        suggested_questions = getattr(structured_data, 'suggested_questions', [])
+        suggested_questions = getattr(structured_data, "suggested_questions", [])
 
-        if is_first_chat:
-            session.chat_summary = f"User's first question: {input.question}\nAI's response: {structured_data.answer}"
-        else:
-            session.chat_summary = summarize_history(db, input.session_id)  # Evolving summary
+        # Update chat_summary (use previous one if OpenAI returns None)
+        new_chat_summary = structured_data.chat_summary if structured_data.chat_summary else chat_summary
 
+        # Save chat entry in the database
         chat_entry = ChatModel(
             session_id=input.session_id,
             request_message=user_message["content"],
@@ -336,14 +296,13 @@ def ask_question(
         )
         db.add(chat_entry)
         db.commit()
+        db.refresh(chat_entry)
 
-        session = db.query(SessionModel).filter(SessionModel.id == input.session_id).first()
-        if not session:
-            return create_response(success=False, message="Session not found while updating.", data=None, status_code=500)
-
+        # Update session metadata
         session.last_message = structured_data.answer
         session.last_message_time = datetime.utcnow()
         session.title = f"{input.class_name} - {input.subject_name} - {input.chapter_name} - {input.topic_name}"
+        session.chat_summary = new_chat_summary  
         db.commit()
         db.refresh(session)
 
@@ -353,7 +312,7 @@ def ask_question(
             data={
                 "answer": structured_data.answer,
                 "suggested_questions": suggested_questions,
-                "chat_history": [{"chat_summary": session.chat_summary}]
+                "chat_summary": new_chat_summary  
             },
             status_code=200
         )

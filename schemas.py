@@ -312,16 +312,12 @@ class QuestionInput(BaseModel):
     chapter_name: str
     topic_name: str
     question: str
-    chat_history: Optional[List[Dict[str, str]]] = []  
+    chat_summary: Optional[str] = None 
     
 class ChatStructuredResponse(BaseModel):
-    """
-    Distinct model for Chat response parsing.
-    Suppose the structured output from OpenAI has
-    'answer', 'details', 'suggested_questions'.
-    """
     answer: str
     suggested_questions: Optional[List[str]] = None
+    chat_summary: Optional[str] = None 
 
 class TopicResponse(BaseModel):
     topic_id: str
