@@ -236,7 +236,7 @@ def ask_question(
             "- Ensure responses are engaging and well-structured by leveraging Markdown formatting.\n"
             "- Maintain an educational tone, using structured content, examples, and diagrams where applicable.\n"
             "- Responses should include headings, paragraphs, and lists where appropriate.\n"
-            "- Provide suggested_questions according to subject, chapter, topic for further exploration and it will be in bullet points.\n"
+            "- Suggest related questions for further exploration using bullet points.\n"
             "- Answer the question and **update the chat summary** by integrating the response into the conversation history.\n"
             "- The chat summary should **evolve dynamically** based on previous interactions, the user's current question, and the AI-generated response."
             "- If the user asks irrelevant, non-educational, or off-topic questions, provide a polite, simple response, such as:\n"
