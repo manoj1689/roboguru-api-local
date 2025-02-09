@@ -236,7 +236,7 @@ def ask_question(
             "- Ensure responses are engaging and well-structured by leveraging Markdown formatting.\n"
             "- Maintain an educational tone, using structured content, examples, and diagrams where applicable.\n"
             "- Responses should include headings, paragraphs, and lists where appropriate.\n"
-            "- Suggest related questions for further exploration using bullet points.\n"
+            "- Provide suggested_questions according to subject, chapter, topic for further exploration and it will be in bullet points.\n"
             "- Answer the question and **update the chat summary** by integrating the response into the conversation history.\n"
             "- The chat summary should **evolve dynamically** based on previous interactions, the user's current question, and the AI-generated response."
             "- If the user asks irrelevant, non-educational, or off-topic questions, provide a polite, simple response, such as:\n"
@@ -451,20 +451,22 @@ def get_chats_for_session(
         if not chats:
             return create_response(success=False, message="No chats found for this session")
 
+        print(chats)
+        session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+
+        title = session.title or "Unknown" 
+        title_parts = title.split(" - ")
+
+        class_name = title_parts[0] if len(title_parts) > 0 else "Unknown"
+        subject_name = title_parts[1] if len(title_parts) > 1 else "Unknown"
+        chapter_name = title_parts[2] if len(title_parts) > 2 else "Unknown"
+        topic = title_parts[3] if len(title_parts) > 3 else title
+
         response_data = []
-        class_name, subject_name, chapter_name, topic_name = None, None, None, None
 
         for chat in chats:
-            match = re.search(r"Class:\s*([^,]+),\s*Subject:\s*([^,]+),\s*Chapter:\s*([^,]+),\s*Topic:\s*([^\.]+)", chat.request_message)
-            if match:
-                class_name, subject_name, chapter_name, topic_name = match.groups()
-
-            # Extract only the question part
-            question_match = re.search(r"Question:\s*(.*?)(?:\s*Provide|\s*$)", chat.request_message, re.IGNORECASE)
-            question = question_match.group(1).strip() if question_match else chat.request_message
-
             response_data.append(
-                {"role": "user", "content": question}
+                {"role": "user", "content": chat.request_message}
             )
             response_data.append(
                 {"role": "assistant", "content": chat.response_message}
@@ -477,7 +479,7 @@ def get_chats_for_session(
             "class_name": class_name,
             "subject_name": subject_name,
             "chapter_name": chapter_name,
-            "topic_name": topic_name,
+            "topic_name": topic,
             "data": response_data
         }
     

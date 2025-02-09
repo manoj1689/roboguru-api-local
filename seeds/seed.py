@@ -6,11 +6,11 @@ with open('seed.json', 'r') as seed_file:
     seed_data = json.load(seed_file)
 
 # API base URL and headers
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "http://127.0.0.1:8001"
 
 HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIrOTE3MDA5MTU4OTA1IiwiZXhwIjoxNzM4MTk5NDkxfQ.cxSN8zyDKRSeWM_6thV7lgeRhxOgut-GRabZJuc8tCQ"
+    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIrOTE3MDA5MTU4OTA1IiwiZXhwIjoxNzM5ODAyNTczfQ.AOEN_oHodTqEdIhr7YV7p0-TB6vbqbSsuW57V3ckV4k"
 }
 
 # Endpoints
