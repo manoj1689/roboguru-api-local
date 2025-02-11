@@ -58,12 +58,13 @@ async def evaluate_answers(questions_with_answers):
     """ AI-based answer evaluation function """
 
     messages = [
-        {"role": "system", "content": "You are an AI-based exam evaluator. Evaluate the student's answers strictly, assign marks for each question, provide feedback, and return the total score. The response must be in the following JSON format:"},
+        {"role": "system", "content": "You are an AI-based exam evaluator. Evaluate the student's answers strictly, assign marks for each question,provide status, provide feedback, and return the total score. The response must be in the following JSON format:"},
         {"role": "user", "content": json.dumps({
             "questions": [
                 {
                     "id": "q1",
                     "marks_obtained": 2,
+                    "status":"correct",
                     "feedback": "Correct answer. Good job!"
                 }
             ],

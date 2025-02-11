@@ -309,6 +309,7 @@ async def evaluate_exam(request: AnswerRequest, db: Session = Depends(get_db)):
                 question_feedback = {
                     "id": result["id"],
                     "obtained_marks": result["marks_obtained"],
+                    "status": result.get("status", "unknown"),
                     "feedback": result["feedback"]
                 }
                 questions_feedback.append(question_feedback)

@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 MAX_HISTORY_TOKENS = 1000
-MODEL = "gpt-4o-mini"
+MODEL = "gpt-4o"
 TOKEN_LIMIT = 300
 # Set up OpenAI client
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -69,128 +69,6 @@ async def start_session(
             "started_at": new_session.started_at.isoformat()
         }
     )
-
-
-# @router.post("/ask-question/", response_model=None)
-# def ask_question(
-#     input: QuestionInput,
-#     db: Session = Depends(get_db),
-#     current_user: str = Depends(get_current_user)
-# ):
-#     """
-#     Handles a question input from the user and returns an answer with structured output.
-#     """
-#     logger.info("Received a question request")
-    
-#     # Validate and convert session_id to UUID
-#     try:
-#         session_id = uuid.UUID(input.session_id)
-#     except ValueError:
-#         logger.error(f"Invalid session_id format: {input.session_id}")
-#         return create_response(success=False, message="Invalid session ID format.", data=None, status_code=400)
-
-#     # Validate session_id
-#     session = db.query(SessionModel).filter(
-#         SessionModel.id == input.session_id, SessionModel.status == "active"
-#     ).first()
-
-#     if not session:
-#         logger.error(f"Invalid or inactive session_id: {input.session_id}")
-#         return create_response(success=False, message="Invalid or inactive session ID.", data=None, status_code=400)
-    
-
-#     # Construct system and user messages
-#     system_message = {
-#         "role": "system",
-#         "content": (
-#             "You are an AI-powered educational assistant designed to help students learn effectively. "
-#             "Provide clear, concise, and well-structured answers tailored to the question's topic. "
-#             "Use the following guidelines:\n"
-#             "- Highlight important terms using **bold** text.\n"
-#             "- Use _italics_ for emphasis when necessary.\n"
-#             "- For explanations, use bullet points or numbered lists to organize content:\n"
-#             "  - Use `-` or `*` for bullet points.\n"
-#             "  - Use `1.`, `2.`, `3.` for numbered lists.\n"
-#             "- Provide examples where relevant to enhance understanding.\n"
-#             "- Include links or references for further learning in Markdown format, such as:\n"
-#             "  `[Click here](https://example.com)`.\n"
-#             "- Use Markdown headers (e.g., `#`, `##`, `###`) for headings to structure the content.\n"
-#             "- Avoid overly complex language; aim for simplicity and readability.\n"
-#             "- Ensure the content is well-structured and engaging for students by leveraging Markdown's formatting capabilities."
-#         )
-#     }
-#     user_message = {
-#         "role": "user",
-#         "content": (
-#             f"Class: {input.class_name}, Subject: {input.subject_name}, "
-#             f"Chapter: {input.chapter_name}, Topic: {input.topic_name}. Question: {input.question}"
-#             "Provide your response in an educational tone with proper Markdown formatting. Use examples, diagrams (if applicable), and structured content for clarity. "
-#             "Ensure the response is well-structured and includes headings, paragraphs, and lists where appropriate. "
-#             "Suggest related questions for further exploration in bullet points."
-#         )
-#     }
-
-
-#     # Combine incoming chat history with the new messages
-#     messages = input.chat_history + [system_message, user_message]
-
-#     try:
-#         # Call OpenAI API for structured completion
-#         completion = openai_client.beta.chat.completions.parse(
-#             model="gpt-4o",  # Replace with your actual model
-#             messages=messages,
-#             response_format=ChatStructuredResponse,
-#         )
-
-#         structured_data = completion.choices[0].message.parsed
-#         usage_data = completion.usage
-
-#         # Extract token usage
-#         input_tokens = getattr(usage_data, 'input_tokens', None)
-#         output_tokens = getattr(usage_data, 'output_tokens', None)
-
-#         # Append the new interaction to the chat history
-#         updated_chat_history = input.chat_history + [
-#             {"role": "user", "content": input.question},
-#             {"role": "assistant", "content": structured_data.answer}
-#         ]
-
-#         # Save chat interaction in the database
-#         chat_entry = ChatModel(
-#             session_id=input.session_id,
-#             request_message=user_message["content"],
-#             response_message=structured_data.answer,
-#             status="active",
-#             input_tokens=input_tokens,
-#             output_tokens=output_tokens,
-#             model_used="gpt-4o",  # Update model name as needed
-#             timestamp=datetime.utcnow()
-#         )
-#         db.add(chat_entry)
-#         db.commit()
-#         # Update session details
-#         session.title = f"{input.class_name} - {input.subject_name} - {input.chapter_name} - {input.topic_name}"
-#         session.last_message = structured_data.answer  # Save the AI's answer here
-#         session.last_message_time = datetime.utcnow()
-#         db.commit()
-#         db.refresh(session)
-
-#         # Return structured response with updated chat history
-#         return create_response(
-#             success=True,
-#             message="Question processed successfully.",
-#             data={
-#                 "answer": structured_data.answer,
-#                 "suggested_questions": structured_data.suggested_questions,
-#                 "chat_history": updated_chat_history
-#             },
-#             status_code=200
-#         )
-
-#     except Exception as e:
-#         logger.error(f"Error processing question: {str(e)}")
-#         return create_response(success=False, message=f"OpenAI API error: {str(e)}", data=None, status_code=500)
-
 
 @router.post("/ask-question/")
 def ask_question(
