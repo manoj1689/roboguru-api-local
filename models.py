@@ -217,10 +217,4 @@ class Exam(Base, BaseMixin):
     ), default='draft', nullable=False)
 
     remark = Column(Text, nullable=True)
-
-    # Relationships with Educational Entities
-    # class_ = relationship("Class", back_populates="exams")
-    # subject = relationship("Subject", back_populates="exams")
-    # chapter = relationship("Chapter", back_populates="exams")
-    # topic = relationship("Topic", back_populates="exams")
     user = relationship("User", back_populates="exams")

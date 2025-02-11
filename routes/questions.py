@@ -6,32 +6,27 @@ from services.auth import get_current_user
 import json
 from services.classes import create_response
 from services.questions import generate_questions
-from schemas import QuestionRequest, MixedQuestionRequest
+from schemas import QuestionRequest, MixedQuestionRequest, AnswerRequest
 from datetime import datetime
 import uuid
+from services.questions import evaluate_answers
 
 router = APIRouter()
-
-
 
 @router.post("/objective")
 async def get_objective_questions(request: QuestionRequest, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
     try:
-        # Generate questions using OpenAI API
         response = await generate_questions("objective", request.dict())
         
-        # Log the raw response to check its content
-        print(response)  # For debugging, remove in production
-
         # Check if the response is valid
         if not isinstance(response, dict):
-            raise ValueError("Invalid response format from OpenAI")
+            return create_response(success=False, message= "Invalid response format from OpenAI", data=None)
 
         # Extract questions
         questions_with_answers = response.get('questions', [])
         
         if not questions_with_answers:
-            raise ValueError("No valid questions generated.")
+            return create_response(success=True, message= "No valid questions generated.", data=None)
 
         # Continue with exam creation...
         exam_id = str(uuid.uuid4())
@@ -71,7 +66,7 @@ async def get_objective_questions(request: QuestionRequest, db: Session = Depend
     except Exception as e:
         db.rollback()
         print(f"Error while saving exam: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error generating questions: {str(e)}")
+        return create_response(success=False, message=f"Error generating questions: {str(e)}")
 
 @router.post("/true_false")
 async def get_true_false_questions(request: QuestionRequest, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
@@ -79,7 +74,7 @@ async def get_true_false_questions(request: QuestionRequest, db: Session = Depen
         response = await generate_questions("true_false", request.dict())
         questions_with_answers = response.get('questions', [])
         if not questions_with_answers:
-            raise ValueError("No valid questions generated.")
+            return create_response(success=True, message= "No valid questions generated.", data=None)
 
         exam_id = str(uuid.uuid4())  # Convert UUID to string
 
@@ -116,7 +111,8 @@ async def get_true_false_questions(request: QuestionRequest, db: Session = Depen
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error generating questions: {str(e)}")
+        return create_response(success=False, message=f"Error generating questions: {str(e)}")
+
 
 
 @router.post("/fill_in_blank")
@@ -125,8 +121,8 @@ async def get_fill_in_blank_questions(request: QuestionRequest, db: Session = De
         response = await generate_questions("fill_in_blank", request.dict())
         questions_with_answers = response.get('questions', [])
         if not questions_with_answers:
-            raise ValueError("No valid questions generated.")
-
+            return create_response(success=True, message= "No valid questions generated.", data=None)
+        
         exam_id = str(uuid.uuid4())  # Convert UUID to string
 
         exam = Exam(
@@ -162,7 +158,8 @@ async def get_fill_in_blank_questions(request: QuestionRequest, db: Session = De
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error generating questions: {str(e)}")
+        return create_response(success=False, message=f"Error generating questions: {str(e)}")
+
 
 
 @router.post("/descriptive")
@@ -171,7 +168,7 @@ async def get_descriptive_questions(request: QuestionRequest, db: Session = Depe
         response = await generate_questions("descriptive", request.dict())
         questions_with_answers = response.get('questions', [])
         if not questions_with_answers:
-            raise ValueError("No valid questions generated.")
+            return create_response(success=True, message= "No valid questions generated.", data=None)
 
         exam_id = str(uuid.uuid4())  # Convert UUID to string
 
@@ -207,7 +204,8 @@ async def get_descriptive_questions(request: QuestionRequest, db: Session = Depe
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error generating questions: {str(e)}")
+        return create_response(success=False, message=f"Error generating questions: {str(e)}")
+
 
 
 @router.post("/mixed")
@@ -216,9 +214,9 @@ async def get_mixed_questions(request: MixedQuestionRequest, db: Session = Depen
         response = await generate_questions("mixed", request.dict())
         questions_with_answers = response.get('questions', [])
         if not questions_with_answers:
-            raise ValueError("No valid questions generated.")
+            return create_response(success=True, message= "No valid questions generated.", data=None)
 
-        exam_id = str(uuid.uuid4())  # Convert UUID to string
+        exam_id = str(uuid.uuid4())  
 
         exam = Exam(
             id=exam_id,
@@ -253,4 +251,89 @@ async def get_mixed_questions(request: MixedQuestionRequest, db: Session = Depen
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error generating questions: {str(e)}")
+        return create_response(success=False, message=f"Error generating questions: {str(e)}")
+
+@router.post("/evaluate_exam")
+async def evaluate_exam(request: AnswerRequest, db: Session = Depends(get_db)):
+    try:
+        # Fetch Exam Data
+        exam = db.query(Exam).filter(Exam.id == request.exam_id).first()
+
+        if not exam:
+            return create_response(success=False, message="Exam not found")
+
+        # Convert question structure into AI-parsable format
+        questions_with_answers = []
+        total_marks = request.max_marks
+        obtained_marks = 0
+        questions_feedback = [] 
+
+        for q in request.questions:
+            question_data = {
+                "id": q["id"],
+                "question": q["text"],
+                "marks": q["marks"]
+            }
+
+            # total_marks += q["marks"]
+
+            if q["type"] == "objective":
+                question_data["options"] = q["options"]
+                question_data["correct_answer"] = q["options"][q["correct_answer"]["option_index"]]
+                question_data["student_answer"] = q["options"][q["student_answer"]]
+
+            elif q["type"] == "true_false":
+                question_data["correct_answer"] = q["correct_answer"]["value"]
+                question_data["student_answer"] = q["student_answer"]
+
+            elif q["type"] == "fill_in_blank":
+                if isinstance(q["correct_answer"]["answers"], list):
+                    correct_answers = q["correct_answer"]["answers"]
+                else:
+                    correct_answers = [q["correct_answer"]["answers"]]  
+                
+            elif q["type"] == "descriptive":
+                question_data["correct_answer"] = q["correct_answer"]["criteria"]
+                question_data["student_answer"] = q["student_answer"]
+
+            questions_with_answers.append(question_data)
+        print("Formatted Questions Sent to AI:", json.dumps(questions_with_answers, indent=2))
+
+        evaluation_result = await evaluate_answers(questions_with_answers)
+        print("Evaluation Result from AI:", evaluation_result)
+
+        # Ensure AI response contains expected data
+        if "questions" in evaluation_result:
+            for result in evaluation_result["questions"]:
+                obtained_marks += result.get("marks_obtained", 0)
+                question_feedback = {
+                    "id": result["id"],
+                    "obtained_marks": result["marks_obtained"],
+                    "feedback": result["feedback"]
+                }
+                questions_feedback.append(question_feedback)
+
+        overall_feedback = evaluation_result.get("overall_feedback", "Good attempt! Keep practicing.")
+
+        # Save evaluation result in database
+        exam.score = obtained_marks
+        exam.remark = overall_feedback
+        exam.status = "evaluating_result"
+        db.commit()
+        db.refresh(exam)
+
+        return create_response(
+            success=True,
+            message="Exam evaluated successfully.",
+            data={
+                "exam_id": request.exam_id,
+                "total_marks": total_marks,
+                "obtained_marks": obtained_marks,
+                "questions_feedback": questions_feedback,
+                "overall_feedback": overall_feedback
+            },
+        )
+
+    except Exception as e:
+        db.rollback()
+        return create_response(success=False, message=f"Error evaluating exam: {str(e)}")

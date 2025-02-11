@@ -326,42 +326,6 @@ def ask_question(
         logger.error(f"OpenAI API Error: {str(e)}")
         return create_response(success=False, message=f"OpenAI API error: {str(e)}", data=None, status_code=500)
 
-# @router.get("/sessions", response_model=None)
-# def get_sessions(
-#     db: Session = Depends(get_db),
-#     current_user: dict = Depends(get_current_user)
-# ):
-#     """
-#     Retrieves a list of sessions for the current user.
-#     """
-#     try:
-#         user_id = current_user.user_id
-
-#         # Query sessions for the current user
-#         sessions = db.query(SessionModel).filter(
-#             SessionModel.user_id == user_id
-#         ).order_by(SessionModel.started_at.desc()).all()
-
-#         # Map sessions to response model
-#         session_list = [
-#             {
-#                 "session_id": str(session.id),
-#                 "title": session.title or "Untitled Session",
-#                 "status": session.status,
-#                 "last_message": session.last_message,
-#                 "last_message_time": session.last_message_time.isoformat() if session.last_message_time else None,
-#                 "started_at": session.started_at.isoformat(),
-#                 "ended_at": session.ended_at.isoformat() if session.ended_at else None,
-#             }
-#             for session in sessions
-#         ]
-
-#         return create_response(success=True, message="Session list retrieved successfully", data=session_list)
-
-#     except Exception as e:
-#         logger.error(f"Error retrieving sessions: {str(e)}")
-#         return create_response(success=False, message=f"An unexpected error occurred: {str(e)}")
-
 @router.get("/sessions", response_model=None)
 def get_sessions(
     db: Session = Depends(get_db),
@@ -373,14 +337,6 @@ def get_sessions(
     """
     try:
         user_id = current_user.user_id
-
-        # Delete 'last_message is none Session' records
-
-        # db.query(SessionModel).filter(
-        #     SessionModel.user_id == user_id,
-        #     (SessionModel.last_message == None)
-        # ).delete(synchronize_session=False)
-        # db.commit()
 
         sessions = db.query(SessionModel).filter(
             SessionModel.user_id == user_id,
@@ -503,12 +459,157 @@ def delete_chat(
     except Exception as e:
         return create_response(success=False, message=f"An unexpected error occurred: {str(e)}")
 
+# from pydantic import BaseModel, AnyHttpUrl
+# from typing import List
+
+# class AnalyzeImageInput(BaseModel):
+#     session_id: str  # Ensure session tracking
+#     image_urls: List[AnyHttpUrl]
+
+# @router.post("/analyze-image/")
+# def analyze_image_endpoint(
+#     images_input: AnalyzeImageInput,
+#     current_user: str = Depends(get_current_user),
+#     db: Session = Depends(get_db),
+# ):
+#     logger.info("Received an image analysis request")
+
+#     # Validate and convert session_id to UUID
+#     try:
+#         session_id = uuid.UUID(images_input.session_id)
+#     except ValueError:
+#         logger.error(f"Invalid session_id format: {images_input.session_id}")
+#         return create_response(success=False, message="Invalid session ID format.", data=None, status_code=400)
+
+#     # Validate session_id
+#     session = db.query(SessionModel).filter(
+#         SessionModel.id == session_id, SessionModel.status == "active"
+#     ).first()
+
+#     if not session:
+#         logger.error(f"Invalid or inactive session_id: {images_input.session_id}")
+#         return create_response(success=False, message="Invalid or inactive session ID.", data=None, status_code=400)
+
+#     # Ensure image URLs have valid formats
+#     for image_url in images_input.image_urls:
+#         image_url = str(image_url)  # Convert AnyHttpUrl to string
+#         if not image_url.lower().endswith((".png", ".jpeg", ".jpg", ".gif", ".webp")):
+#             raise HTTPException(
+#                 status_code=400,
+#                 detail=f"Unsupported image format for URL: {image_url}. Supported formats: png, jpeg, jpg, gif, webp.",
+#             )
+
+#     # Construct system and user messages
+#     system_message = {
+#         "role": "system",
+#         "content": (
+#             "You are an AI-powered image analysis assistant. "
+#             "Analyze the provided images and generate insightful descriptions. "
+#             "Ensure responses are clear, concise, and well-structured. "
+#             "Use bullet points or numbered lists for clarity where applicable."
+#         )
+#     }
+
+#     user_message = {
+#         "role": "user",
+#         "content": [{"type": "text", "text": "Describe the content of these images."}]
+#     }
+
+#     # Convert AnyHttpUrl to string before adding to messages
+#     for image_url in images_input.image_urls:
+#         user_message["content"].append({"type": "image_url", "image_url": {"url": str(image_url)}})
+
+#     # Combine chat history with new messages
+#     messages = [system_message, user_message]
+
+#     try:
+#         # Call OpenAI API for image analysis
+#         response = openai.chat.completions.create(
+#             model="gpt-4o-mini",
+#             messages=messages,
+#             max_tokens=500,
+#         )
+
+#         analysis_result = response.choices[0].message.content.strip()
+#         tokens_used = response.usage.total_tokens
+
+#         # Generate insightful questions based on analysis
+#         question_prompt = f"Based on the provided images, generate 4 insightful questions that encourage further discussion.\n{analysis_result}"
+
+#         question_messages = [
+#             {
+#                 "role": "system",
+#                 "content": "You are an AI assistant that analyzes images and provides meaningful insights."
+#             },
+#             {
+#                 "role": "user",
+#                 "content": question_prompt
+#             }
+#         ]
+
+#         question_response = openai.chat.completions.create(
+#             model="gpt-4o-mini",
+#             messages=question_messages,
+#             max_tokens=200,
+#         )
+
+#         generated_questions = question_response.choices[0].message.content.strip()
+
+#         # Append to chat history
+#         updated_chat_history = [
+#             user_message,
+#             {"role": "assistant", "content": analysis_result},
+#             {"role": "assistant", "content": f"Generated Questions:\n{generated_questions}"}
+#         ]
+
+#         # Save chat interaction in the database
+#         chat_entry = ChatModel(
+#             session_id=session_id,
+#             request_message="Image Analysis",
+#             response_message=analysis_result,
+#             status="active",
+#             input_tokens=tokens_used,
+#             output_tokens=None,  # Optional if not available
+#             model_used="gpt-4o-mini",
+#             timestamp=datetime.utcnow()
+#         )
+#         db.add(chat_entry)
+
+#         # Update session details
+#         session.last_message = analysis_result
+#         session.last_message_time = datetime.utcnow()
+
+#         db.commit()
+#         db.refresh(session)
+
+#         # Return structured response with updated chat history
+#         return create_response(
+#             success=True,
+#             message="Image analysis completed successfully.",
+#             data={
+#                 "analysis_result": analysis_result,
+#                 "generated_questions": generated_questions,
+#                 "chat_history": updated_chat_history
+#             },
+#             status_code=200
+#         )
+
+#     except openai.error.OpenAIError as e:
+#         logger.error(f"OpenAI API error: {str(e)}")
+#         return create_response(success=False, message="AI processing error.", data=None, status_code=500)
+#     except Exception as e:
+#         logger.exception("Unexpected error occurred.")
+#         return create_response(success=False, message="An internal server error occurred.", data=None, status_code=500)
+
+
 from pydantic import BaseModel, AnyHttpUrl
-from typing import List
+from typing import List, Optional
 
 class AnalyzeImageInput(BaseModel):
-    session_id: str  # Ensure session tracking
-    image_urls: List[AnyHttpUrl]
+    session_id: str  
+    question: str
+    image_urls: Optional[List[AnyHttpUrl]] = [] 
+    chat_summary: Optional[str] = None 
 
 @router.post("/analyze-image/")
 def analyze_image_endpoint(
@@ -516,13 +617,9 @@ def analyze_image_endpoint(
     current_user: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    logger.info("Received an image analysis request")
-
-    # Validate and convert session_id to UUID
     try:
         session_id = uuid.UUID(images_input.session_id)
     except ValueError:
-        logger.error(f"Invalid session_id format: {images_input.session_id}")
         return create_response(success=False, message="Invalid session ID format.", data=None, status_code=400)
 
     # Validate session_id
@@ -531,116 +628,132 @@ def analyze_image_endpoint(
     ).first()
 
     if not session:
-        logger.error(f"Invalid or inactive session_id: {images_input.session_id}")
         return create_response(success=False, message="Invalid or inactive session ID.", data=None, status_code=400)
 
-    # Ensure image URLs have valid formats
-    for image_url in images_input.image_urls:
-        image_url = str(image_url)  # Convert AnyHttpUrl to string
-        if not image_url.lower().endswith((".png", ".jpeg", ".jpg", ".gif", ".webp")):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unsupported image format for URL: {image_url}. Supported formats: png, jpeg, jpg, gif, webp.",
-            )
+    # Use previous chat summary if not provided in request
+    chat_summary = images_input.chat_summary if images_input.chat_summary else session.chat_summary
+    if chat_summary is None:
+        chat_summary = ""
 
-    # Construct system and user messages
+    # System message with updated instructions
     system_message = {
         "role": "system",
         "content": (
-            "You are an AI-powered image analysis assistant. "
-            "Analyze the provided images and generate insightful descriptions. "
-            "Ensure responses are clear, concise, and well-structured. "
-            "Use bullet points or numbered lists for clarity where applicable."
+            "You are an AI-powered educational assistant. "
+            "Analyze images (if provided) and answer the user's question in an educational way. "
+            "If no images are sent, continue the discussion using previous context stored in the chat summary.\n\n"
+            "- The latest response (from image analysis or text-based discussion).\n"
+            "- The previous chat summary."
         )
     }
 
-    user_message = {
-        "role": "user",
-        "content": [{"type": "text", "text": "Describe the content of these images."}]
-    }
+    # Step 1: **Handle Image Analysis (if images are provided)**
+    analysis_result = "No images provided for analysis."
+    if images_input.image_urls:
+        user_message = {
+            "role": "user",
+            "content": [{"type": "text", "text": "Describe the content of these images."}]
+        }
 
-    # Convert AnyHttpUrl to string before adding to messages
-    for image_url in images_input.image_urls:
-        user_message["content"].append({"type": "image_url", "image_url": {"url": str(image_url)}})
+        for image_url in images_input.image_urls:
+            user_message["content"].append({"type": "image_url", "image_url": {"url": str(image_url)}})
 
-    # Combine chat history with new messages
-    messages = [system_message, user_message]
+        messages = [system_message, user_message]
 
-    try:
-        # Call OpenAI API for image analysis
-        response = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            max_tokens=500,
-        )
+        try:
+            # Call OpenAI API for image analysis
+            response = openai.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                max_tokens=500,
+            )
+            analysis_result = response.choices[0].message.content.strip()
+        except openai.error.OpenAIError as e:
+            return create_response(success=False, message="AI processing error.", data=None, status_code=500)
 
-        analysis_result = response.choices[0].message.content.strip()
-        tokens_used = response.usage.total_tokens
-
-        # Generate insightful questions based on analysis
-        question_prompt = f"Based on the provided images, generate 4 insightful questions that encourage further discussion.\n{analysis_result}"
-
-        question_messages = [
-            {
-                "role": "system",
-                "content": "You are an AI assistant that analyzes images and provides meaningful insights."
-            },
+    # Step 2: **If no images are sent, generate a response using previous chat summary**
+    elif chat_summary:
+        messages = [
+            system_message,
             {
                 "role": "user",
-                "content": question_prompt
+                "content": f"Previous chat summary:\n{chat_summary}\n\nUser's Question:\n{images_input.question}\n\n"
+                           "Continue the discussion based on previous context."
             }
         ]
+        try:
+            response = openai.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                max_tokens=500,
+            )
+            analysis_result = response.choices[0].message.content.strip()
+        except openai.error.OpenAIError as e:
+            return create_response(success=False, message="AI processing error.", data=None, status_code=500)
+    else:
+        analysis_result = "No images or previous context available. Please provide more details."
 
+    # Step 3: **Update Chat Summary**
+    summary_messages = [
+        system_message,
+        {
+            "role": "user",
+            "content": f"Previous chat summary:\n{chat_summary}\n\nUser's Question:\n{images_input.question}\n\nAnalysis result:\n{analysis_result}"
+        },
+        {
+            "role": "assistant",
+            "content": "Based on the previous chat summary, user's question, and the new analysis result, generate an updated chat summary."
+        }
+    ]
+
+    try:
+        summary_response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=summary_messages,
+            max_tokens=300,
+        )
+        new_chat_summary = summary_response.choices[0].message.content.strip()
+    except openai.error.OpenAIError as e:
+        return create_response(success=False, message="AI processing error.", data=None, status_code=500)
+
+    # Step 4: **Generate Suggested Questions**
+    suggested_question_messages = [
+        system_message,
+        {
+            "role": "user",
+            "content": (
+                f"User's question: '{images_input.question}'\n\n"
+                f"Analysis result: '{analysis_result}'\n\n"
+                "Generate 4 insightful follow-up questions based on the above information."
+            )
+        }
+    ]
+
+    try:
         question_response = openai.chat.completions.create(
             model="gpt-4o-mini",
-            messages=question_messages,
+            messages=suggested_question_messages,
             max_tokens=200,
         )
-
-        generated_questions = question_response.choices[0].message.content.strip()
-
-        # Append to chat history
-        updated_chat_history = [
-            user_message,
-            {"role": "assistant", "content": analysis_result},
-            {"role": "assistant", "content": f"Generated Questions:\n{generated_questions}"}
-        ]
-
-        # Save chat interaction in the database
-        chat_entry = ChatModel(
-            session_id=session_id,
-            request_message="Image Analysis",
-            response_message=analysis_result,
-            status="active",
-            input_tokens=tokens_used,
-            output_tokens=None,  # Optional if not available
-            model_used="gpt-4o-mini",
-            timestamp=datetime.utcnow()
-        )
-        db.add(chat_entry)
-
-        # Update session details
-        session.last_message = analysis_result
-        session.last_message_time = datetime.utcnow()
-
-        db.commit()
-        db.refresh(session)
-
-        # Return structured response with updated chat history
-        return create_response(
-            success=True,
-            message="Image analysis completed successfully.",
-            data={
-                "analysis_result": analysis_result,
-                "generated_questions": generated_questions,
-                "chat_history": updated_chat_history
-            },
-            status_code=200
-        )
-
+        suggested_questions = question_response.choices[0].message.content.strip()
     except openai.error.OpenAIError as e:
-        logger.error(f"OpenAI API error: {str(e)}")
         return create_response(success=False, message="AI processing error.", data=None, status_code=500)
-    except Exception as e:
-        logger.exception("Unexpected error occurred.")
-        return create_response(success=False, message="An internal server error occurred.", data=None, status_code=500)
+
+    # Step 5: **Save Updated Chat Summary**
+    session.chat_summary = new_chat_summary
+    session.last_message = analysis_result if images_input.image_urls else images_input.question
+    session.last_message_time = datetime.utcnow()
+    db.commit()
+    db.refresh(session)
+
+    # Step 6: **Return only necessary data**
+    return create_response(
+        success=True,
+        message="Analysis completed successfully.",
+        data={
+            "analysis_result": analysis_result,
+            "suggested_questions": suggested_questions, 
+            "chat_summary": new_chat_summary  
+        },
+        status_code=200
+    )

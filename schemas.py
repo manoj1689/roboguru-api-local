@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, root_validator, EmailStr
-from typing import Optional, Dict, List, Union
+from typing import Optional, Dict, List, Union, Any
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime, date
 import uuid
@@ -367,3 +367,13 @@ class QuestionRequest(BaseModel):
 
 class MixedQuestionRequest(QuestionRequest):
     question_distribution: Dict[str, int]
+
+class AnswerRequest(BaseModel):
+    exam_id: str
+    exam_title: str
+    class_name: str
+    subject_name: str
+    chapter_name: str
+    topic_name: str
+    max_marks: Optional[int] = None 
+    questions: List[Dict[str, Any]]
