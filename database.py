@@ -5,16 +5,11 @@ from sqlalchemy.orm import sessionmaker
 # SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"  # Replace with your database URL
 
 
-# /SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:postgresql@localhost:5432/robo_guru"
-SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:password@localhost:5432/robo_guru"
+SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:postgresql@localhost:5432/robo_guru"
+# SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:password@localhost:5432/robo_guru"
 
-
-
-# SQLALCHEMY_DATABASE_URL= "postgresql://postgres:password@localhost:5432/roboguru"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
-
-# engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

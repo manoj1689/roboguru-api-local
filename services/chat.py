@@ -56,18 +56,6 @@ def truncate_chat_history(chat_history_context: List[ChatModel], max_tokens: int
         total_tokens += message_tokens
     return truncated_history
 
-
-
-# def save_chat_history(db, session_id: str, user_message: str, bot_response: str):
-#     new_chat = ChatModel(
-#         id=uuid.uuid4(),
-#         session_id=session_id,
-#         request_message=user_message,
-#         response_message=bot_response
-#     )
-#     db.add(new_chat)
-#     db.commit()
-
 def save_chat_history(
     db: Session, 
     session_id: str, 

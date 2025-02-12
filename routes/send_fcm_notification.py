@@ -54,12 +54,8 @@ def send_test_notification(token):
 
     # Define the FCM message payload
     message = messaging.Message(
-        data=payloadV1,  # This is the data payload
-        token=token,  # The FCM device registration token
-        # notification=messaging.Notification(  # Notification payload
-        #     title="Alert",
-        #     body="testing"
-        # ),
+        data=payloadV1, 
+        token=token,  
         android=messaging.AndroidConfig(
             priority="high",
             ttl=2160000  # Time-to-live in milliseconds

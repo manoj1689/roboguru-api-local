@@ -249,9 +249,6 @@ def upload_profile_image(
         file_url = f"/profile_images/{unique_filename}"
         file_url = BASE_URL+file_url
 
-        # Save file information to the database if needed
-        # Example: db.add(...); db.commit()
-
         # Return the file URL in the response
         return create_response(
             success=True,

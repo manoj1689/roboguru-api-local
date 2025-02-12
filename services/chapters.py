@@ -49,10 +49,3 @@ def create_chapter_in_db(db: Session, chapter: ChapterCreate, subject_id: int):
     db.refresh(db_chapter)
     return db_chapter
 
-
-    
-
-# def get_chapters(db: Session, skip: int = 0, limit: int = 10):
-#     return db.query(Chapter).options(joinedload(Chapter.topics)).offset(skip).limit(limit).all()
-
-

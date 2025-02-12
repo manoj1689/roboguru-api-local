@@ -30,7 +30,6 @@ class Class(Base, BaseMixin):
     subjects = relationship("Subject", back_populates="class_")
     users = relationship("User", back_populates="user_class_details")
     topics = relationship("Topic", back_populates="class_")
-    # exams = relationship("Exam", back_populates="class_")
 
 class Subject(Base, BaseMixin):
     __tablename__ = "subjects"
@@ -42,7 +41,6 @@ class Subject(Base, BaseMixin):
     image_prompt = Column(String, nullable=True)
     class_ = relationship("Class", back_populates="subjects")
     chapters = relationship("Chapter", back_populates="subject")
-    # exams = relationship("Exam", back_populates="subject")  
 
 class Chapter(Base, BaseMixin):
     __tablename__ = "chapters"
@@ -53,7 +51,6 @@ class Chapter(Base, BaseMixin):
     image_link = Column(String, nullable=True)
     subject = relationship("Subject", back_populates="chapters")
     topics = relationship("Topic", back_populates="chapter")
-    # exams = relationship("Exam", back_populates="chapter")  
 
 
 class Topic(Base, BaseMixin):
@@ -68,7 +65,6 @@ class Topic(Base, BaseMixin):
     priority = Column(Integer, default=0)  
     is_completed = Column(Boolean, default=False)
     
-    # exams = relationship("Exam", back_populates="topic")  
     progress = relationship("UserTopicProgress", back_populates="topic")
     chapter_id = Column(String, ForeignKey("chapters.id"))
     class_id = Column(String, ForeignKey("classes.id")) 
@@ -178,7 +174,6 @@ class ImagesToTextModel(Base):
     language_used = Column(String, default="en")
     timestamp = Column(DateTime, default=datetime.utcnow)
 
-# === UserTopicProgress Model ===
 class UserTopicProgress(Base, BaseMixin):
     __tablename__ = "user_topic_progress"
 
@@ -188,7 +183,6 @@ class UserTopicProgress(Base, BaseMixin):
     is_completed = Column(Boolean, default=False)
     last_updated = Column(DateTime, default=datetime.utcnow)
 
-    # Relationships
     user = relationship("User", back_populates="progress")
     topic = relationship("Topic", back_populates="progress")
 
@@ -198,7 +192,6 @@ class Exam(Base, BaseMixin):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(String, ForeignKey("users.user_id"), nullable=False)  
 
-    # Educational Hierarchy Fields
     class_name = Column(String, nullable=False)
     subject_name = Column(String,  nullable=False)
     chapter_name = Column(String, nullable=True)
