@@ -10,9 +10,8 @@ BASE_URL = "http://127.0.0.1:8000"
 
 HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIrOTE3MDA5MTU4OTA1IiwiZXhwIjoxNzM4MTk5NDkxfQ.cxSN8zyDKRSeWM_6thV7lgeRhxOgut-GRabZJuc8tCQ"
+    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtYW5vakBtb2Jpcml6ZXIuY29tIiwiZXhwIjoxNzM5NDQ2MzgyfQ.nNxesquLg9PXPCQe_9ec_VXrKYq4rY95NACRAFzWQy8"
 }
-
 # Endpoints
 ENDPOINTS = {
     "create_level": "/level/create/",

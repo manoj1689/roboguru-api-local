@@ -18,7 +18,7 @@ def create_superadmin(db: Session):
             is_superadmin=True,
             type="superadmin",
             otp=1234,
-            user_identifier = "default_identifier"
+            user_identifier = "9708188605"
         )
         db.add(superadmin)
         db.commit()

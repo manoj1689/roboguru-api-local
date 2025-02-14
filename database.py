@@ -5,8 +5,8 @@ from sqlalchemy.orm import sessionmaker
 # SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"  # Replace with your database URL
 
 
-SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:postgresql@localhost:5432/robo_guru"
-# SQLALCHEMY_DATABASE_URL= "postgresql://postgres:password@localhost:5432/roboguru"
+#SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:postgresql@localhost:5432/robo_guru"
+SQLALCHEMY_DATABASE_URL= "postgresql://postgres:password@localhost:5432/nikhil_admin_db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 
