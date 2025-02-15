@@ -377,3 +377,43 @@ class AnswerRequest(BaseModel):
     topic_name: str
     max_marks: Optional[int] = None 
     questions: List[Dict[str, Any]]
+
+
+class STTInput(BaseModel):
+    audio_file: str = Field(..., description="Base64 encoded audio file")
+    language_code: Optional[str] = Field("en", description="Language code of the audio")
+
+class STTOutput(BaseModel):
+    audio_text: str
+    audio_time_in_sec: float
+    model_used: str
+    language_code: str
+    timestamp: datetime
+    additional_data: Optional[dict] = None
+
+class TTSInput(BaseModel):
+    text: str = Field(..., description="Text to convert to speech")
+    language_code: Optional[str] = Field("en", description="Language code for speech synthesis")
+
+class TTSOutput(BaseModel):
+    audio_file: str  # Base64 encoded audio
+    characters_used: int
+    timestamp: datetime
+    language_used: str
+    model_used: str
+    additional_data: Optional[dict] = None
+
+class UploadImageOutput(BaseModel):
+    image_urls: List[str]
+
+class ImagesToTextInput(BaseModel):
+    image_urls: List[str] = Field(..., description="List of Image URLs")
+    prompt: str = Field(..., description="Prompt for image analysis")
+    language_code: Optional[str] = Field("en", description="Language code for the response")
+
+class ImagesToTextOutput(BaseModel):
+    text_response: str
+    model_used: str
+    token_used: int
+    language_used: str
+    additional_data: Optional[dict] = None

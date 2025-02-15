@@ -1,10 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from models import Topic, Class, UserTopicProgress, User
 import logging
 from database import get_db
-from schemas import UserProgressResponse, UpdateProgressRequest, SubjectResponse, TopicResponse, ChapterResponse
-from services.dependencies import superadmin_only 
+from schemas import UpdateProgressRequest
 from services.user_progress import calculate_chapter_progress, calculate_subject_progress
 from services.auth import get_current_user 
 from datetime import datetime

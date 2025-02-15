@@ -1,107 +1,44 @@
-import json
-from models import ChatModel, SessionModel
-import tiktoken
-from typing import List
-import openai
-from sqlalchemy.orm import Session
-from fastapi import HTTPException
-import schemas
-from sqlalchemy.orm import joinedload
-import uuid
-# Constants
-MAX_HISTORY_TOKENS = 1000
-MODEL = "gpt-4o-mini"
-# MODEL = "o3-mini"
+def construct_prompt(input, session):
+    chat_summary = input.chat_summary or session.chat_summary or ""
 
-def calculate_tokens(text, model: str = MODEL) -> int:
-    # Ensure text is a string if it's a list of objects
-    if isinstance(text, list):
-        # If text is a list (e.g., a list of ChatHistory objects), extract the relevant text from each item
-        combined_text = " ".join([str(item.text) if hasattr(item, 'text') else str(item) for item in text])
-    else:
-        # If it's already a string, just use it directly
-        combined_text = str(text)
-    
-    # Now pass the combined text to tiktoken for encoding
-    encoding = tiktoken.encoding_for_model(model)
-    return len(encoding.encode(combined_text))
-
-
-
-# Summarize history
-def summarize_history(chat_history_context: List[ChatModel]) -> str:
-    full_text = "\n".join([f"User: {m['user']}\nBot: {m['bot']}" for m in chat_history_context])
-    prompt = f"Summarize the following conversation for context:\n\n{full_text}\n\nProvide a concise summary:"
-    
-    try:
-        response = openai.ChatCompletion.create(
-            model=MODEL,
-            messages=[{"role": "system", "content": prompt}],
-            max_tokens=200
+    system_message = {
+        "role": "system",
+        "content": (
+            "You are an AI-powered educational assistant designed to help students learn effectively. "
+            "Use the following guidelines:\n"
+            "- Highlight important terms using **bold** text.\n"
+            "- Use _italics_ for emphasis when necessary.\n"
+            "- For explanations, use bullet points or numbered lists to organize content.\n"
+            "- Provide examples where relevant to enhance understanding.\n"
+            "- Include links or references for further learning in Markdown format.\n"
+            "- Use Markdown headers for headings to structure the content.\n"
+            "- Avoid overly complex language; aim for simplicity and readability.\n"
+            "- Ensure responses are engaging and well-structured by leveraging Markdown formatting.\n"
+            "- Maintain an educational tone, using structured content, examples, and diagrams where applicable.\n"
+            "- Responses should include headings, paragraphs, and lists where appropriate.\n"
+            "- Suggest related questions for further exploration using bullet points.\n"
+            "- Answer the question and **update the chat summary** by integrating the response into the conversation history.\n"
+            "- The chat summary should **evolve dynamically** based on previous interactions, the user's current question, and the AI-generated response."
+            "- If the user asks irrelevant, non-educational, or off-topic questions, provide a polite, simple response."
         )
-        return response['choices'][0]['message']['content']
-    except Exception as e:
-        print(f"Error during summarization: {e}")
-        return "Summary could not be generated due to an error."
+    }
 
-# Truncate history
-def truncate_chat_history(chat_history_context: List[ChatModel], max_tokens: int) -> List[ChatModel]:
-    total_tokens = 0
-    truncated_history = []
-    for message in reversed(chat_history_context):
-        message_tokens = calculate_tokens(message['user'] + message['bot'], model=MODEL)
-        if total_tokens + message_tokens > max_tokens:
-            break
-        truncated_history.insert(0, message)
-        total_tokens += message_tokens
-    return truncated_history
+    user_message = {
+        "role": "user",
+        "content": (
+            f"Class: {input.class_name}, Subject: {input.subject_name}, "
+            f"Chapter: {input.chapter_name}, Topic: {input.topic_name}.\n\n"
+            f"Question: {input.question}\n\n"
+            f"Previous Chat Summary:\n{chat_summary if chat_summary else 'None'}"
+        )
+    }
 
-def save_chat_history(
-    db: Session, 
-    session_id: str, 
-    user_message: str, 
-    bot_response: str, 
-    input_tokens: int, 
-    output_tokens: int, 
-    model_used: str
-):
-    new_chat = ChatModel(
-        id=uuid.uuid4(),
-        session_id=session_id,
-        request_message=user_message,
-        response_message=bot_response,
-        input_tokens=input_tokens,
-        output_tokens=output_tokens,
-        model_used=model_used
-    )
-    db.add(new_chat)
-    db.commit()
+    update_summary_prompt = {
+        "role": "assistant",
+        "content": (
+            "Based on the previous chat summary and the new question, generate an updated chat summary "
+            "that retains relevant past information, incorporates the AI response, and ensures the conversation context is maintained."
+        )
+    }
 
-
-def get_chat_history(db: Session):
-    return db.query(ChatModel).all()
-
-def convert_chat_history_to_dict(chat_history_list):
-    # Convert each ChatHistory object into a dictionary
-    chat_history_data = [
-        {
-            "id": chat.id,
-            "user_id": chat.user_id,
-            "user": chat.user,
-            "bot": chat.bot,
-            "timestamp": chat.timestamp.isoformat()  # Format the datetime as string
-        }
-        for chat in chat_history_list
-    ]
-    return chat_history_data
-
-
-
-def get_all_sessions(db: Session, limit: int = 10):
-    return (
-        db.query(SessionModel)
-        .options(joinedload(SessionModel.chats))  # Preload chats
-        .limit(limit)
-        .all()
-    )
-
+    return [system_message, user_message, update_summary_prompt]
