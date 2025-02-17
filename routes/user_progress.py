@@ -107,7 +107,7 @@ def get_user_progress(
 
                     is_completed = user_topic.is_completed if user_topic else False
 
-                    if is_completed:  # ✅ Now only adding completed topics
+                    if is_completed:  
                         topics_data.append({
                             "topic_id": topic.id,
                             "is_completed": is_completed,
@@ -115,7 +115,7 @@ def get_user_progress(
 
                         chapter_has_completed_topic = True
                         subject_has_completed_topic = True
-                # Only add chapters with at least one completed topic
+
                 if chapter_has_completed_topic:
                     chapters_data.append({
                         "chapter_id": chapter.id,
@@ -124,7 +124,6 @@ def get_user_progress(
                         "chapter_progress": calculate_chapter_progress(chapter, current_user.user_id, db),
                     })
 
-            # Include the subject only if it has at least one completed topic
             if subject_has_completed_topic:
                 response_subjects.append({
                     "subject_id": subject.id,

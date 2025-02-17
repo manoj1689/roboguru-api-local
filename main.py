@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db
 import models
-from routes import questions, exam, user_progress, search, firebase,classes, subjects, chapters, topics, login, chat, level, users, trending, openaiengine
+from routes import questions, user_progress, search, firebase,classes, subjects, chapters, topics, login, chat, level, users, trending, openaiengine
 from services.users import create_superadmin
 from exception_handlers import custom_http_exception_handler
 from fastapi.exceptions import HTTPException
@@ -48,7 +48,6 @@ app.include_router(openaiengine.router, prefix="/openaiengine", tags=["openaieng
 app.include_router(firebase.router, prefix="/firebase", tags=["firebase"])
 app.include_router(search.router, prefix="/search", tags=["search"])
 app.include_router(user_progress.router, prefix="/user_progress", tags=["user_progress"])
-app.include_router(exam.router, prefix="/exam", tags=["oldexam"])
 app.include_router(questions.router, prefix="/exams", tags=["examinations"])
 
 
