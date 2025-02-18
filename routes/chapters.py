@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from typing import List, Optional
-import schemas
+from schemas.chapter import ChapterCreate, ChapterUpdate
 from database import get_db
 import services.chapters
 from sqlalchemy.orm import Session
@@ -15,7 +15,7 @@ router = APIRouter()
 
 @router.post("/create", response_model=None)
 def create_chapter(
-    chapter: schemas.ChapterCreate = Body(...),
+    chapter: ChapterCreate = Body(...),
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user),
 ):
@@ -86,7 +86,7 @@ async def get_chapters_by_subject(
 @router.put("/{chapter_id}", response_model=None)
 def update_chapter(
     chapter_id: str,
-    chapter_data: schemas.ChapterUpdate = Body(...),
+    chapter_data: ChapterUpdate = Body(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(superadmin_only), 
 ):

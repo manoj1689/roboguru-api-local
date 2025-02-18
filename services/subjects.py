@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from models.classes import Class
 from models.subject import Subject
-from schemas import SubjectCreate
+from schemas.subject import SubjectCreate
 from fastapi import HTTPException
 from typing import Optional
 

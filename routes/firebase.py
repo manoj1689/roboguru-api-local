@@ -4,7 +4,9 @@ from firebase_admin import auth, exceptions, messaging
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from core.config import settings
-from schemas import FirebaseLoginInput, TokenRequest, NotificationRequest
+from schemas.firebase import FirebaseLoginInput
+from schemas.token import TokenRequest
+from schemas.notification import NotificationRequest
 from models.user import User
 from database import get_db
 from sqlalchemy.orm import Session
@@ -18,6 +20,7 @@ router = APIRouter()
 
 initialize_firebase()
 
+# SUPERADMIN_UID = "xnOFfNZrVeSYwbFMfoBxFEj3PWK2" 
 
 @router.post("/firebase-login")
 async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db)):
@@ -45,9 +48,6 @@ async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db
         phone_number = decoded_token.get("phone_number")
         role = decoded_token.get("role", "normal")
         identifier = phone_number or email
-
-        print(f"Decoded Token: {decoded_token}")
-        print(f"UID: {uid}, Email: {email}, Phone Number: {phone_number}, Role: {role}")
 
         if not uid or not identifier:
             return create_response(
@@ -206,8 +206,6 @@ async def send_user_notification(request: NotificationRequest, db: Session = Dep
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error sending notification: {str(e)}")
     
-SUPERADMIN_UID = "superadmin-unique-uid" 
-
 @router.post("/superadmin/login")
 async def superadmin_login(input: FirebaseLoginInput, db: Session = Depends(get_db)):
     id_token_str = input.id_token
@@ -234,7 +232,7 @@ async def superadmin_login(input: FirebaseLoginInput, db: Session = Depends(get_
         phone_number = decoded_token.get("phone_number")
         identifier = phone_number or email
 
-        if uid != SUPERADMIN_UID:
+        if uid != settings.SUPERADMIN_UID:
             return create_response(success=False, message="Unauthorized access. Only superadmin can login.")
 
         user = db.query(User).filter(User.user_id == uid).first()
@@ -251,6 +249,9 @@ async def superadmin_login(input: FirebaseLoginInput, db: Session = Depends(get_
                 updated_at=datetime.utcnow(),
             )
             db.add(user)
+            db.commit()
+        else:
+            user.type = "superadmin" 
             db.commit()
 
         jwt_access_token = create_access_token(data={"sub": str(user.user_identifier), "role": "superadmin"}, expires_delta=timedelta(hours=200))

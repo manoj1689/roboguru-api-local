@@ -5,7 +5,7 @@ from models.classes import Class
 from models.topic import Topic
 from models.userprogress import UserTopicProgress
 from database import get_db
-from schemas import UpdateProgressRequest
+from schemas.user_progress import UpdateProgressRequest
 from services.user_progress import calculate_chapter_progress, calculate_subject_progress
 from utils.auth import get_current_user 
 from datetime import datetime

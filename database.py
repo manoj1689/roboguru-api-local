@@ -1,12 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from core.config import settings  
 
-# SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"  # Replace with your database URL
-
-
-SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:postgresql@localhost:5432/robo_guru"
-# SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:password@localhost:5432/roboguru"
+# Get Database URL from .env file
+SQLALCHEMY_DATABASE_URL = settings.SQLALCHEMY_DATABASE_URL
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 

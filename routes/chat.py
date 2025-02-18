@@ -11,7 +11,8 @@ from services.chat import (
     fetch_chats_for_session,
     remove_chat
 )
-from schemas import QuestionInput, SessionCreateResponse
+from schemas.chat import QuestionInput
+from schemas.session import SessionCreateResponse
 import logging
 
 # Configure logging

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from sqlalchemy.orm import Session
 from typing import Optional
-import schemas
+from schemas.topic import TopicCreate, TopicUpdate
 from database import get_db
 import services.topics
 from utils.auth import get_current_user 
@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.post("/create", response_model=None)
 def create_topic(
-    topic: schemas.TopicCreate = Body(...),
+    topic: TopicCreate = Body(...),
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user),
 ):
@@ -94,7 +94,7 @@ def read_topic(
 @router.put("/{topic_id}", response_model=None)
 def edit_topic(
     topic_id: str,
-    updated_topic: schemas.TopicUpdate = Body(...),
+    updated_topic: TopicUpdate = Body(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(superadmin_only), 
 ):

@@ -2,9 +2,7 @@ from sqlalchemy.orm import Session
 from models.user import User
 from uuid import uuid4
 from fastapi import HTTPException, status
-from schemas import UserCreate
 from datetime import datetime
-from utils.auth import create_access_token
 
 
 def create_superadmin(db: Session):

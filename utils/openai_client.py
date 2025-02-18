@@ -1,7 +1,7 @@
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
-from schemas import ChatStructuredResponse
+from schemas.chat import ChatStructuredResponse
 
 
 load_dotenv()

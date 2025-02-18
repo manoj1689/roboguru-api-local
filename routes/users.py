@@ -10,11 +10,14 @@ from services.users import (
 )
 from utils.auth import create_access_token
 from utils.dependencies import superadmin_only  
-from schemas import OTPRequest, UpdateUserProfileRequest
+from schemas.user import OTPRequest, UpdateUserProfileRequest
 from utils.auth import get_current_user  
 from utils.response import create_response
 from fastapi.staticfiles import StaticFiles
 import os
+from uuid import uuid4
+from pathlib import Path
+
 
 router = APIRouter()
 
@@ -214,16 +217,10 @@ def update_user_profile(
 def remove_user(user_id: str, db: Session = Depends(get_db), _: User = Depends(superadmin_only)):
     return delete_user(user_id, db)
 
-from uuid import uuid4
-from pathlib import Path
-import os
 # Directory to save uploaded images
-UPLOAD_DIR = "uploaded_profile_images"
-Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
-
-# Mount static files for serving profile images
-router.mount("/profile_images", StaticFiles(directory="uploaded_profile_images"), name="profile_images")
-
+UPLOADS_DIR = "uploads"
+UPLOADS_PROFILE_DIR = f"{UPLOADS_DIR}/profile_images"
+Path(UPLOADS_PROFILE_DIR).mkdir(parents=True, exist_ok=True)
 
 @router.post("/profile/upload-image", response_model=None)
 def upload_profile_image(
@@ -243,14 +240,14 @@ def upload_profile_image(
 
         # Generate unique filename
         unique_filename = f"{uuid4()}.{file_extension}"
-        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+        file_path = os.path.join(UPLOADS_PROFILE_DIR, unique_filename)
 
         # Save the file
         with open(file_path, "wb") as f:
             f.write(file.file.read())
 
         # Create file URL
-        file_url = f"/profile_images/{unique_filename}"
+        file_url = f"/uploads/profile_images/{unique_filename}"
         file_url = BASE_URL+file_url
 
         # Return the file URL in the response

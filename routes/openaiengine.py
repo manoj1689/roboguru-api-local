@@ -9,13 +9,14 @@ from services.openaiengine import (
     upload_image,
     process_images_to_text
 )
-from schemas import STTInput, STTOutput, TTSInput, TTSOutput, ImagesToTextInput, ImagesToTextOutput
+from schemas.stt_tts import STTInput, STTOutput, TTSInput, TTSOutput
+from schemas.image_processing import ImagesToTextInput, ImagesToTextOutput
 from fastapi.responses import FileResponse
 
 router = APIRouter()
 
 
-@router.post("/speech-to-text/", response_model=STTOutput)
+@router.post("/speech-to-text/", response_model=None)
 def speech_to_text_endpoint(
     stt_input: STTInput,
     db: Session = Depends(get_db),
@@ -24,7 +25,7 @@ def speech_to_text_endpoint(
     return process_speech_to_text(stt_input, db)
 
 
-@router.post("/text-to-speech/", response_model=TTSOutput)
+@router.post("/text-to-speech/", response_model=None)
 def text_to_speech_endpoint(
     tts_input: TTSInput,
     db: Session = Depends(get_db),
@@ -47,7 +48,7 @@ def upload_image_endpoint(
     return upload_image(file)
 
 
-@router.post("/images-to-text/", response_model=ImagesToTextOutput)
+@router.post("/images-to-text/", response_model=None)
 def images_to_text_endpoint(
     images_input: ImagesToTextInput,
     db: Session = Depends(get_db),

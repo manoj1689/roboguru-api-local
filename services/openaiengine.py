@@ -8,7 +8,8 @@ from models.stt import STTModel
 from models.itt import ImagesToTextModel
 from models.tts import TTSModel
 from dotenv import load_dotenv
-from schemas import STTInput, TTSInput,ImagesToTextInput
+from schemas.stt_tts import STTInput, TTSInput
+from schemas.image_processing import ImagesToTextInput
 from utils.response import create_response
 from utils.openaiengine import decode_base64, calculate_audio_duration, transcribe_audio, generate_speech, process_image_to_text
 
@@ -16,19 +17,22 @@ load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL")
 
-# Directory setup
-UPLOAD_DIR = "uploaded_images"
-TTS_UPLOAD_DIR = "uploaded_audio"
+# Unified Uploads Directory
+UPLOAD_DIR = "uploads"
+UPLOADS_IMAGES_DIR = f"{UPLOAD_DIR}/images"
+TTS_UPLOAD_DIR = f"{UPLOAD_DIR}/audio"
+
+# Ensure Directories Exist
+Path(UPLOADS_IMAGES_DIR).mkdir(parents=True, exist_ok=True)
 Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 Path(TTS_UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
-
 
 def process_speech_to_text(stt_input: STTInput, db: Session):
     try:
         audio_bytes = decode_base64(stt_input.audio_file)
         audio_time_in_sec = calculate_audio_duration(audio_bytes)
 
-        temp_audio_path = f"{UPLOAD_DIR}/temp_{uuid.uuid4()}.wav"
+        temp_audio_path = f"{TTS_UPLOAD_DIR}/temp_{uuid.uuid4()}.wav"
         with open(temp_audio_path, "wb") as f:
             f.write(audio_bytes)
 
@@ -100,7 +104,7 @@ def process_text_to_speech(tts_input: TTSInput, db: Session):
 
 
 def get_audio_file(filename: str):
-    file_path = f"./uploaded_audio/{filename}"
+    file_path = os.path.join(TTS_UPLOAD_DIR, filename)
     if os.path.exists(file_path):
         return file_path
     raise HTTPException(status_code=404, detail="File not found")
@@ -114,12 +118,12 @@ def upload_image(file: UploadFile):
             raise HTTPException(status_code=400, detail="Invalid file type. Only PNG, JPG, JPEG, and GIF are allowed.")
 
         unique_filename = f"{uuid.uuid4()}.{file_extension}"
-        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+        file_path = os.path.join(UPLOADS_IMAGES_DIR, unique_filename)
 
         with open(file_path, "wb") as f:
             f.write(file.file.read())
 
-        file_url = f"{BASE_URL}/images/{unique_filename}"
+        file_url = f"{BASE_URL}/uploads/images/{unique_filename}"
         return create_response(success=True, message="Image uploaded successfully", data={"image_url": file_url})
     except Exception as e:
         return create_response(success=False, message=f"An unexpected error occurred: {str(e)}")
@@ -146,6 +150,7 @@ def process_images_to_text(images_input: ImagesToTextInput, db: Session):
                 "model_used": "gpt-4o-mini",
                 "token_used": tokens_used,
                 "language_used": images_input.language_code,
+                "additional_data": {},
             }
         )
     except Exception as e:

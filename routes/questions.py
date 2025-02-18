@@ -6,7 +6,7 @@ from utils.auth import get_current_user
 import json
 from utils.response import create_response
 from services.questions import generate_questions, evaluate_answers
-from schemas import QuestionRequest, MixedQuestionRequest, AnswerRequest
+from schemas.question import QuestionRequest, MixedQuestionRequest, AnswerRequest
 from datetime import datetime
 import uuid
 

@@ -7,7 +7,7 @@ from models.user import User
 from models.session import SessionModel
 from models.chat import ChatModel
 from utils.openai_client import get_ai_response
-from schemas import QuestionInput
+from schemas.chat import QuestionInput
 from utils.openai_client import MODEL
 
 

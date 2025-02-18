@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from sqlalchemy.orm import Session
 from typing import Optional
 from database import get_db
-from schemas import EducationLevelCreate, EducationLevelUpdate
+from schemas.education_level import EducationLevelCreate, EducationLevelUpdate
 from models.user import User
 from models.education_level import EducationLevel
 from services.level import get_all_education_levels, create_education_level, get_education_level

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from models.chapter import Chapter
 from models.topic import Topic
-from schemas import TopicCreate
+from schemas.topic import TopicCreate
 from fastapi import HTTPException
 from typing import Optional
 

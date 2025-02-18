@@ -7,7 +7,7 @@ from models.user import User
 from utils.dependencies import superadmin_only
 from uuid import uuid4
 from utils.response import create_response
-from schemas import OTPRequest, OTPVerification, AdminLogin
+from schemas.user import OTPRequest, OTPVerification, AdminLogin
 from jose import JWTError, jwt
 from core.config import settings
 

@@ -6,7 +6,7 @@ from models.chapter import Chapter
 from models.topic import Topic
 import logging
 from database import get_db
-from schemas import UpdateTrendingTopicRequest
+from schemas.trnding_topic import UpdateTrendingTopicRequest
 from utils.response import create_response
 from utils.auth import get_current_user 
 from core.config import settings

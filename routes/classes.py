@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session
 from typing import Optional
-import schemas
+from schemas.classes import ClassCreate, ClassUpdate
 from database import get_db
 from services.classes import get_class_by_level, create_class_in_db, get_all_classes
 from utils.response import create_response
@@ -16,7 +16,7 @@ router = APIRouter()
 
 @router.post("/create/", response_model=None)
 def create_class(
-    classes: schemas.ClassCreate = Body(...),
+    classes: ClassCreate = Body(...),
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user),
 ):
@@ -116,7 +116,7 @@ def read_class(
 @router.put("/{class_id}", response_model=None)
 def update_class(
     class_id: str,
-    class_data: schemas.ClassUpdate,
+    class_data: ClassUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(superadmin_only),
 ):

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from sqlalchemy.orm import Session
 from typing import Optional
-import schemas
+from schemas.subject import SubjectCreate, SubjectUpdate
 from database import get_db
 import services.subjects
 from utils.auth import get_current_user 
@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.post("/create", response_model=None)
 def create_subject(
-    subject: schemas.SubjectCreate = Body(...),
+    subject: SubjectCreate = Body(...),
     db: Session = Depends(get_db),
     current_user: str = Depends(get_current_user),
 ):
@@ -90,7 +90,7 @@ async def get_subjects_by_class(
 @router.put("/{subject_id}", response_model=None)
 def update_subject(
     subject_id: str,
-    subject_data: schemas.SubjectUpdate = Body(...),
+    subject_data: SubjectUpdate = Body(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(superadmin_only), 
 ):
