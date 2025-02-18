@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordBearer
-from services.auth import create_access_token, create_refresh_token
+from utils.auth import create_access_token, create_refresh_token
 from database import get_db
-from models import User
-from services.dependencies import superadmin_only
+from models.user import User
+from utils.dependencies import superadmin_only
 from uuid import uuid4
-from services.classes import create_response
+from utils.response import create_response
 from schemas import OTPRequest, OTPVerification, AdminLogin
 from jose import JWTError, jwt
 from core.config import settings

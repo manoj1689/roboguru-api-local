@@ -1,4 +1,4 @@
-from models import UserTopicProgress
+from models.userprogress import UserTopicProgress
 
 def calculate_chapter_progress(chapter, user_id, db):
     all_topics = chapter.topics 

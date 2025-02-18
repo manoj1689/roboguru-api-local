@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from models import Topic, Chapter
+from models.chapter import Chapter
+from models.topic import Topic
 from schemas import TopicCreate
 from fastapi import HTTPException
 from typing import Optional

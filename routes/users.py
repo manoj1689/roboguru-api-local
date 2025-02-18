@@ -1,21 +1,25 @@
 from fastapi import APIRouter, Depends, Query, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from database import get_db
-from models import User, EducationLevel, Class
-from sqlalchemy import cast, BigInteger
+from models.user import User
+from models.classes import Class
+from models.education_level import EducationLevel
 from services.users import (
     get_all_users,
     delete_user,
 )
-from services.auth import create_access_token
-from services.dependencies import superadmin_only  
-from schemas import OTPRequest, UserProfileResponse, UpdateUserProfileRequest
-from services.auth import get_current_user  
-from services.classes import create_response
+from utils.auth import create_access_token
+from utils.dependencies import superadmin_only  
+from schemas import OTPRequest, UpdateUserProfileRequest
+from utils.auth import get_current_user  
+from utils.response import create_response
 from fastapi.staticfiles import StaticFiles
 import os
+
 router = APIRouter()
+
 BASE_URL = os.getenv("BASE_URL")
+
 @router.post("/register")
 def register(request: OTPRequest, db: Session = Depends(get_db)):
     try:

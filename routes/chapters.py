@@ -4,11 +4,12 @@ import schemas
 from database import get_db
 import services.chapters
 from sqlalchemy.orm import Session
-from services.auth import get_current_user
-from services.classes import create_response
-from models import Subject, User
+from utils.auth import get_current_user
+from utils.response import create_response
+from models.user import User
+from models.subject import Subject
 from datetime import datetime
-from services.dependencies import superadmin_only
+from utils.dependencies import superadmin_only
 
 router = APIRouter()
 

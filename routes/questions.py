@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from models import Exam
+from models.exam import Exam
 from database import get_db
-from services.auth import get_current_user
+from utils.auth import get_current_user
 import json
-from services.classes import create_response
+from utils.response import create_response
 from services.questions import generate_questions, evaluate_answers
 from schemas import QuestionRequest, MixedQuestionRequest, AnswerRequest
 from datetime import datetime

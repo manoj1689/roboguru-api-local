@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
-from services.auth import get_current_user
-from models import User
+from utils.auth import get_current_user
+from models.user import User
 from database import get_db
 from sqlalchemy.orm import Session
 import logging

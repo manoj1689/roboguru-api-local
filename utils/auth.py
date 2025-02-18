@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from datetime import datetime, timedelta
 from jose import JWTError, jwt, ExpiredSignatureError
 from core.config import settings
-from models import User
+from models.user import User
 from sqlalchemy.orm import Session
 from database import get_db
 

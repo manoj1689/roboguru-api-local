@@ -5,11 +5,11 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from core.config import settings
 from schemas import FirebaseLoginInput, TokenRequest, NotificationRequest
-from models import User
+from models.user import User
 from database import get_db
 from sqlalchemy.orm import Session
-from services.auth import create_access_token, create_refresh_token
-from services.classes import create_response
+from utils.auth import create_access_token, create_refresh_token
+from utils.response import create_response
 from google.oauth2 import id_token
 from google.auth.transport import requests
 import psycopg2
@@ -18,10 +18,11 @@ router = APIRouter()
 
 initialize_firebase()
 
+
 @router.post("/firebase-login")
 async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db)):
     id_token_str = input.id_token
-
+    
     if not id_token_str:
         return create_response(success=False, message="ID Token is required.")
 
@@ -44,6 +45,9 @@ async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db
         phone_number = decoded_token.get("phone_number")
         role = decoded_token.get("role", "normal")
         identifier = phone_number or email
+
+        print(f"Decoded Token: {decoded_token}")
+        print(f"UID: {uid}, Email: {email}, Phone Number: {phone_number}, Role: {role}")
 
         if not uid or not identifier:
             return create_response(
@@ -128,6 +132,7 @@ async def firebase_login(input: FirebaseLoginInput, db: Session = Depends(get_db
 
     except Exception as e:
         return create_response(success=False, message=f"Unexpected error: {str(e)}")
+
 
 @router.post("/token/refresh")
 def refresh_token(request: TokenRequest, db: Session = Depends(get_db)):

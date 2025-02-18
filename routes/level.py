@@ -3,12 +3,13 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from database import get_db
 from schemas import EducationLevelCreate, EducationLevelUpdate
-from models import EducationLevel, User
+from models.user import User
+from models.education_level import EducationLevel
 from services.level import get_all_education_levels, create_education_level, get_education_level
-from services.auth import get_current_user  
-from services.classes import create_response
+from utils.auth import get_current_user  
+from utils.response import create_response
 from datetime import datetime
-from services.dependencies import superadmin_only
+from utils.dependencies import superadmin_only
 
 router = APIRouter()
 

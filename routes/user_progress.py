@@ -1,13 +1,15 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from models import Topic, Class, UserTopicProgress, User
-import logging
+from models.user import User
+from models.classes import Class
+from models.topic import Topic
+from models.userprogress import UserTopicProgress
 from database import get_db
 from schemas import UpdateProgressRequest
 from services.user_progress import calculate_chapter_progress, calculate_subject_progress
-from services.auth import get_current_user 
+from utils.auth import get_current_user 
 from datetime import datetime
-from services.classes import create_response
+from utils.response import create_response
 router = APIRouter()
 
 

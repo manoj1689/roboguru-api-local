@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import EducationLevel
+from models.education_level import EducationLevel
 from schemas import EducationLevelCreate
 from fastapi import HTTPException
 from typing import Optional

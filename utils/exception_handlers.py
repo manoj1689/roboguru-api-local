@@ -1,7 +1,7 @@
 
 from fastapi.exceptions import HTTPException
 from fastapi import Request
-from services.classes import create_response
+from utils.response import create_response
 
 async def custom_http_exception_handler(request: Request, exc: HTTPException):
     if exc.status_code == 401:  # Unauthorized error

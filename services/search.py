@@ -1,8 +1,9 @@
 from fastapi import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from models import Chapter, Topic
-from services.classes import create_response
+from models.chapter import Chapter
+from models.topic import Topic
+from utils.response import create_response
 
 def fuzzy_search_with_trgm(db: Session, query: str, limit: int = 10):
     try:

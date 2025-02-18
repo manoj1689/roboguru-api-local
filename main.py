@@ -2,9 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db
 import models
-from routes import questions, user_progress, search, firebase,classes, subjects, chapters, topics, login, chat, level, users, trending, openaiengine
+from routes import questions, user_progress, search, firebase, classes, subjects, chapters, topics, login, chat, level, users, trending, openaiengine
 from services.users import create_superadmin
-from exception_handlers import custom_http_exception_handler
+from utils.exception_handlers import custom_http_exception_handler
 from fastapi.exceptions import HTTPException
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path

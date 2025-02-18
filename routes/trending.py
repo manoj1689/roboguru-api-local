@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from models import Topic, Subject, Class, Chapter
+from models.classes import Class
+from models.subject import Subject
+from models.chapter import Chapter
+from models.topic import Topic
 import logging
 from database import get_db
 from schemas import UpdateTrendingTopicRequest
-from services.classes import create_response
-from services.auth import get_current_user 
+from utils.response import create_response
+from utils.auth import get_current_user 
 from core.config import settings
 from sqlalchemy.sql import func, desc
 

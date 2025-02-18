@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from models import EducationLevel, Class
+from models.education_level import EducationLevel
+from models.classes import Class
 from schemas import ClassCreate
 from fastapi import HTTPException
-from fastapi.responses import JSONResponse
 from typing import Optional
 
 def get_class(db: Session, class_id: int):
@@ -35,14 +35,3 @@ def create_class_in_db(db: Session, classes: ClassCreate):
 
 def get_class_by_level(db: Session, level_id: int):
     return db.query(Class).filter(Class.level_id == level_id, Class.is_deleted == False).all()
-
-def create_response(success: bool, message: str, data: Optional[dict] = None, status_code: Optional[int] = None):
-    response_content = {
-        "success": success,
-        "message": message,
-        "data": data or {}
-    }
-    return JSONResponse(
-        status_code=status_code if status_code is not None else (200 if success else 400),
-        content=response_content
-    )

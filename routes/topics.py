@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import Optional
 import schemas
 from database import get_db
 import services.topics
-from services.auth import get_current_user 
-from services.classes import create_response
+from utils.auth import get_current_user 
+from utils.response import create_response
 from datetime import datetime
-from models import User
-from services.dependencies import superadmin_only
+from models.user import User
+from utils.dependencies import superadmin_only
 
 router = APIRouter()
 
