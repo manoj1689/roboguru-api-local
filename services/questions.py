@@ -3,6 +3,8 @@ import json
 from dotenv import load_dotenv
 import openai
 import os
+import re
+from datetime import datetime
 
 load_dotenv()
 
@@ -29,19 +31,34 @@ async def generate_questions(question_type: str, payload: dict):
     messages.append({"role": "user", "content": question_prompts[question_type]})
 
     try:
+        start_time = datetime.utcnow()
         response = openai.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini", 
             messages=messages,
             temperature=0,
-            max_tokens=2000
+            max_tokens=3500
         )
+        end_time = datetime.utcnow()
+        # Correct way to access token usage
+        input_tokens = response.usage.prompt_tokens
+        output_tokens = response.usage.completion_tokens
+        total_tokens = response.usage.total_tokens
+
+        gen_time = (end_time - start_time).total_seconds()
+
         generated_content = response.choices[0].message.content.strip()
-        questions = json.loads(generated_content)
 
-        if not questions:
-            raise ValueError("No valid questions generated.")
-        return questions
+        json_match = re.search(r"```json(.*?)```", generated_content, re.DOTALL)
+        if json_match:
+            cleaned_json = json_match.group(1).strip()
+        else:
+            cleaned_json = generated_content 
 
+        questions = json.loads(cleaned_json) 
+        return questions, input_tokens, output_tokens, total_tokens, gen_time
+   
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON format from OpenAI response.")
     except openai.OpenAIError as e:
         raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
     except json.JSONDecodeError:
@@ -74,21 +91,22 @@ async def evaluate_answers(questions_with_answers):
 
     try:
         response = openai.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini", 
             messages=messages,
             temperature=0,
-            max_tokens=2000
+            max_tokens=3000
         )
 
         evaluation_content = response.choices[0].message.content.strip()
 
-        # Ensure it's parsed correctly
-        if not evaluation_content:
-            raise ValueError("OpenAI returned an empty response.")
+        json_match = re.search(r"```json(.*?)```", evaluation_content, re.DOTALL)
+        if json_match:
+            cleaned_json = json_match.group(1).strip()
+        else:
+            cleaned_json = evaluation_content  
 
-        evaluation = json.loads(evaluation_content)
+        evaluation = json.loads(cleaned_json)  
 
-        # Debugging: Check if evaluation contains expected fields
         if "questions" not in evaluation or "score" not in evaluation:
             raise ValueError("AI response does not contain 'questions' or 'score'. Ensure OpenAI follows the expected format.")
 

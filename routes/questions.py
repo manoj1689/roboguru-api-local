@@ -11,44 +11,60 @@ from datetime import datetime
 import uuid
 
 router = APIRouter()
+import uuid
+import json
+from datetime import datetime
+from sqlalchemy.orm import Session
+from fastapi import Depends
 
-async def create_exam(request, question_type, db, current_user):
-    response = await generate_questions(question_type, request.dict())
-    questions_with_answers = response.get('questions', [])
-    if not questions_with_answers:
-        return create_response(success=True, message="No valid questions generated.", data=None)
+async def create_exam(request, question_type, db: Session, current_user):
+    try:
+        # Unpacking the response correctly
+        response, input_tokens, output_tokens, total_tokens, gen_time = await generate_questions(question_type, request.dict())
+        
+        questions_with_answers = response.get('questions', [])
+        if not questions_with_answers:
+            return create_response(success=True, message="No valid questions generated.", data=None)
 
-    exam_id = str(uuid.uuid4())
-    exam = Exam(
-        id=exam_id,
-        user_id=str(current_user.user_id),
-        class_name=request.class_name,
-        subject_name=request.subject_name,
-        chapter_name=request.chapter_name,
-        topic_name=request.topic_name,
-        exam_title=f"{request.topic_name or 'General'} {question_type.replace('_', ' ').title()} Quiz",
-        exam_description=f"A {question_type.replace('_', ' ')} quiz.",
-        questions_with_answers=json.dumps(questions_with_answers),
-        status="draft",
-        created_at=datetime.utcnow(),
-    )
-    db.add(exam)
-    db.commit()
-    db.refresh(exam)
+        exam_id = str(uuid.uuid4())
+        exam = Exam(
+            id=exam_id,
+            user_id=str(current_user.user_id),
+            class_name=request.class_name,
+            subject_name=request.subject_name,
+            chapter_name=request.chapter_name,
+            topic_name=request.topic_name,
+            exam_title=f"{request.topic_name or 'General'} {question_type.replace('_', ' ').title()} Quiz",
+            exam_description=f"A {question_type.replace('_', ' ')} quiz.",
+            questions_with_answers=json.dumps(questions_with_answers),  # Ensure JSON serialization
+            status="draft",
+            created_at=datetime.utcnow(),
+        )
+        db.add(exam)
+        db.commit()
+        db.refresh(exam)
 
-    return create_response(
-        success=True,
-        message=f"{question_type.replace('_', ' ').title()} questions generated and saved successfully.",
-        data={
-            "exam_id": str(exam.id),
-            "exam_title": str(exam.exam_title),
-            "class_name": str(exam.class_name),
-            "subject_name": str(exam.subject_name),
-            "chapter_name": str(exam.chapter_name),
-            "topic_name": str(exam.topic_name),
-            "questions": questions_with_answers,
-        },
-    )
+        return create_response(
+            success=True,
+            message=f"{question_type.replace('_', ' ').title()} questions generated and saved successfully.",
+            data={
+                "exam_id": str(exam.id),
+                "exam_title": str(exam.exam_title),
+                "class_name": str(exam.class_name),
+                "subject_name": str(exam.subject_name),
+                "chapter_name": str(exam.chapter_name),
+                "topic_name": str(exam.topic_name),
+                "questions": questions_with_answers,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "total_tokens": total_tokens,
+                "generation_time": gen_time
+            },
+        )
+    except Exception as e:
+        db.rollback()
+        return create_response(success=False, message=f"Error generating questions: {str(e)}")
+
 
 @router.post("/objective")
 async def get_objective_questions(request: QuestionRequest, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
