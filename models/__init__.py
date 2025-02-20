@@ -1,3 +1,14 @@
 from .base import Base
-from .user import User 
-
+from .user import User
+from .subject import Subject
+from .chapter import Chapter
+from .topic import Topic
+from .classes import Class
+from .education_level import EducationLevel
+from .exam import Exam
+from .session import SessionModel
+from .userprogress import UserTopicProgress
+from .chat import ChatModel
+from .itt import ImagesToTextModel
+from .stt import STTModel
+from .tts import TTSModel
