@@ -3,12 +3,12 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
 import uuid
-from .base import BaseMixin
+from models.base import BaseMixin
 from datetime import datetime
 
 
 
-class UserTopicProgress(Base, BaseMixin):
+class UserTopicProgress(BaseMixin, Base):
     __tablename__ = "user_topic_progress"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)

@@ -2,11 +2,11 @@ from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.orm import relationship
 from database import Base
 import uuid
-from .base import BaseMixin
+from models.base import BaseMixin
 
 
 
-class Chapter(Base, BaseMixin):
+class Chapter(BaseMixin, Base):
     __tablename__ = "chapters"
     id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, index=True)

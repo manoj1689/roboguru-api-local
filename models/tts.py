@@ -3,11 +3,11 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
 import uuid
-from .base import BaseMixin
+from models.base import BaseMixin
 from datetime import datetime
 
 
-class TTSModel(Base):
+class TTSModel(BaseMixin, Base):
     __tablename__ = "tts"
 
     id = Column(Integer, primary_key=True, index=True)

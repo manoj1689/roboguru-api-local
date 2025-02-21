@@ -2,10 +2,10 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Date, DateTime, Bool
 from sqlalchemy.orm import relationship
 from database import Base
 import uuid
-from .base import BaseMixin
+from models.base import BaseMixin
 
 
-class User(Base, BaseMixin):
+class User(BaseMixin, Base):
     __tablename__ = "users"
     
     user_id = Column(String, primary_key=True,default=lambda: str(uuid.uuid4()), index=True)

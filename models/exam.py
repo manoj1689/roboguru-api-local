@@ -3,12 +3,12 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from database import Base
 import uuid
-from .base import BaseMixin
+from models.base import BaseMixin
 from datetime import datetime
 from sqlalchemy.dialects.postgresql import UUID, JSON
 
 
-class Exam(Base, BaseMixin):
+class Exam(BaseMixin, Base):
     __tablename__ = "exams_and_submissions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -25,6 +25,15 @@ class Exam(Base, BaseMixin):
     questions_with_answers = Column(JSON, nullable=True) 
     answers = Column(JSON, nullable=True)  
     score = Column(DECIMAL(5, 2), nullable=True)  
+    
+    # total_marks = Column(DECIMAL(5, 2), nullable=False)
+    # total_time_taken = Column(Integer, nullable=False)
+    # accuracy = Column(DECIMAL(5, 2), nullable=True)
+    # total_correct_answers = Column(Integer, nullable=False)
+    # total_incorrect_answers = Column(Integer, nullable=False)
+    # total_unanswered_questions = Column(Integer, nullable=False)
+    # questions_feedback = Column(JSON, nullable=True)
+    # overall_feedback = Column(Text, nullable=True)
 
     status = Column(Enum(
         'draft', 'ongoing', 'time_over', 'answer_submission_started', 

@@ -2,10 +2,10 @@ from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.orm import relationship
 from database import Base
 import uuid
-from .base import BaseMixin
+from models.base import BaseMixin
 
 
-class Class(Base, BaseMixin):
+class Class(BaseMixin, Base):
     __tablename__ = "classes"
     id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, index=True)
